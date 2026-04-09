@@ -1,0 +1,105 @@
+name: release
+
+# Publishes @aman_asmuei/aman-copilot to npm when a v* tag is pushed.
+#
+# Security posture:
+# - Triggered ONLY by tag push, never by PR or branch push. Secrets are
+#   never exposed to untrusted PR code.
+# - Uses `id-token: write` for npm provenance via OIDC (no secret forwarding
+#   beyond NODE_AUTH_TOKEN for the authenticated publish call itself).
+# - No untrusted github.event.* input is interpolated into `run:` steps.
+#   github.ref_name is trusted because only repo maintainers can push tags.
+#   All interpolations use the safe `env: VAR: ${{ ... }}` pattern so the
+#   shell sees a variable reference, never inlined attacker-controlled text.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write    # create GitHub Release
+  id-token: write    # npm provenance via OIDC
+
+jobs:
+  test:
+    name: test (Node 20)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install jq
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+      - name: Run test suite
+        run: bash test/test.sh
+
+  verify-version:
+    name: verify tag matches package.json
+    runs-on: ubuntu-latest
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches package.json version
+        env:
+          TAG_REF: ${{ github.ref_name }}
+        run: |
+          TAG_VERSION="${TAG_REF#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "Tag version:     $TAG_VERSION"
+          echo "Package version: $PKG_VERSION"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $TAG_REF does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+  publish:
+    name: publish to npm
+    runs-on: ubuntu-latest
+    needs: [test, verify-version]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 20 with npm registry
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish to npm (with provenance)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
+
+  github-release:
+    name: create GitHub Release
+    runs-on: ubuntu-latest
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create release from CHANGELOG section
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          VERSION="${TAG#v}"
+          # Extract the section for this version from CHANGELOG.md.
+          # Assumes sections start with "## <version> — <date>".
+          awk -v ver="## ${VERSION}" '
+            $0 ~ ver {found=1; next}
+            found && /^## [0-9]/ {exit}
+            found {print}
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
+            printf 'Release %s. See CHANGELOG.md for details.\n' "$TAG" > /tmp/release-notes.md
+          fi
+          gh release create "$TAG" \
+            --repo "$REPO" \
+            --title "$TAG" \
+            --notes-file /tmp/release-notes.md
