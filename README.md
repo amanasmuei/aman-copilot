@@ -189,10 +189,10 @@ Both live in the same ecosystem. Pick either, or both.
 | **Target IDE** | Claude Code | VS Code + Copilot Chat |
 | **Delivery** | `SessionStart` hook injects context into the prompt | Static `copilot-instructions.md`, auto-loaded |
 | **Live tools** | `~/.claude.json` mcpServers | VS Code user-level `mcp.json` |
-| **Slash commands** | `/identity`, `/rules`, `/eval`, … | via Copilot Chat Agent mode + MCP tool calls |
+| **Slash commands** | `/identity`, `/rules`, `/eval`, … | `/identity`, `/rules`, `/eval`, `/remember` (via prompt files) |
 | **Scope** | `dev:plugin` | `dev:copilot` |
 | **Install** | `claude plugin install aman-plugin@aman` | `npx @aman_asmuei/aman-copilot init && install-mcp` |
-| **Status** | Stable, 20 tests passing | v0.1.0 initial release |
+| **Status** | Stable, 20 tests passing | v0.2.0 — parity with aman-plugin |
 
 **Running both?** They don't conflict. The shared layers (`acore`, `arules`, `amem`) are scope-aware — each plugin reads its own scope first, falls back to the other if unset. One identity, two adapters.
 
@@ -269,9 +269,9 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 
 ## Roadmap
 
-- **v0.1 (current)** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
-- **v0.2** — Test suite mirroring aman-plugin's 20-test harness. npm publish.
-- **v0.3** — VS Code extension wrapper with `@aman` chat participant for native `/identity`, `/rules`, `/eval` commands in Copilot Chat.
+- **v0.1** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
+- **v0.2 (current)** — **Parity pass.** Time-aware greeting, forced-freshness protocol, native slash commands (`/identity`, `/rules`, `/eval`, `/remember`) via prompt files, proactive memory protocol.
+- **v0.3** — Test suite mirroring aman-plugin's harness. npm publish. VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 
 See [CHANGELOG.md](CHANGELOG.md) for what's released.
