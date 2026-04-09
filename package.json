@@ -1,6 +1,6 @@
 {
   "name": "@aman_asmuei/aman-copilot",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Bring the aman ecosystem (identity, rules, memory, live MCP tools) into GitHub Copilot Chat in VS Code.",
   "type": "module",
   "bin": {

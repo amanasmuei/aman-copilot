@@ -178,13 +178,25 @@ This plugin uses `dev:copilot`. The layer resolver prefers `dev:copilot`-scoped 
 ## Commands
 
 ```bash
-aman-copilot init            # write .github/copilot-instructions.md
+aman-copilot init            # write .github/copilot-instructions.md + prompt files
 aman-copilot install-mcp     # register aman + amem-memory in VS Code
 aman-copilot uninstall-mcp   # remove the aman entries (preserves others)
 aman-copilot --help          # show usage
 ```
 
 All commands work via `npx @aman_asmuei/aman-copilot <cmd>` without a global install.
+
+`aman-copilot init` also writes 5 prompt files that become native Copilot Chat slash commands inside the project:
+
+| Slash command | Purpose |
+|:---|:---|
+| `/identity` | View or update your aman identity |
+| `/rules` | Check, add, or list guardrails |
+| `/eval` | Log a session or view the relationship report |
+| `/remember` | Store something in amem (auto-classified as correction / decision / fact) |
+| `/session-narrative` ⭐ | Save a 300–500 word flowing-prose narrative of the session's reasoning path |
+
+See [Memory 101](#memory-101--getting-the-most-out-of-amem) for when and how to use `/session-narrative` — it's the pattern that preserves *how* we got to a decision, not just *what* we decided.
 
 ### After identity changes
 
@@ -207,7 +219,7 @@ Both live in the same ecosystem. Pick either, or both.
 | **Target IDE** | Claude Code | VS Code + Copilot Chat |
 | **Delivery** | `SessionStart` hook injects context into the prompt | Static `copilot-instructions.md`, auto-loaded |
 | **Live tools** | `~/.claude.json` mcpServers | VS Code user-level `mcp.json` |
-| **Slash commands** | `/identity`, `/rules`, `/eval`, … | `/identity`, `/rules`, `/eval`, `/remember` (via prompt files) |
+| **Slash commands** | `/identity`, `/rules`, `/eval`, … | `/identity`, `/rules`, `/eval`, `/remember`, `/session-narrative` (via prompt files) |
 | **Scope** | `dev:plugin` | `dev:copilot` |
 | **Install** | `claude plugin install aman-claude-code@aman` | `npx @aman_asmuei/aman-copilot init && install-mcp` |
 | **Status** | Stable, 20 tests passing | v0.2.0 — parity with aman-claude-code |
@@ -285,6 +297,36 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 
 ---
 
+## Memory 101 — getting the most out of amem
+
+Your AI doesn't save everything automatically — it saves what you tell it to save, using natural language phrases the AI has been instructed to listen for. If you skip the phrases, memory silently fails.
+
+**The 30-second version:**
+
+```
+SAVE:    "remember that X"          → fact
+         "don't X" / "never X"      → correction (always wins)
+         "we decided X"             → decision
+         "I prefer X over Y"        → preference
+
+RECALL:  "what do you remember about X"
+         "check your memory for X"
+
+SESSION: "save a session narrative"   ← ⭐ preserves the reasoning path
+         "log this session"
+         "what did we figure out?"
+
+PRIVACY: wrap sensitive text in <private>...</private>
+```
+
+When you run `aman-copilot init`, this phrase catalog is embedded directly into the generated `.github/copilot-instructions.md`, so the AI has the contract in context on every conversation.
+
+**The session narrative pattern** (⭐) is the most underused and most valuable. At the end of a substantial session, say *"save a session narrative"* — the AI writes a 300–500 word flowing-prose memory note covering what we tried, what worked, what didn't, what we decided, and why. Unlike scattered `memory_store` calls (which capture decisions), the narrative captures the **reasoning path** — the attempts, the dead ends, the pivot moments. Next session, `memory_recall` on that narrative returns the whole story. See the [session-narrative prompt file](#commands) for what `/session-narrative` does.
+
+**Full guide:** [amem prompt best practices](https://github.com/amanasmuei/amem/blob/main/docs/guides/prompt-best-practices.md) — phrase catalog in depth, memory tiers, privacy, debugging, and the philosophy of curated memory over raw transcripts.
+
+---
+
 ## Roadmap
 
 - **v0.1** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
@@ -292,7 +334,8 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 - **v0.3** — **Test hardening + npm publish.** 38 assertions across `init`, `install-mcp`, `uninstall-mcp`. Tag-driven CI/CD with OIDC provenance. Caught an unconditional amem-leak bug.
 - **v0.3.1** — **Copilot CLI support.** `install-mcp --cli` / `--all` flags, targets `~/.copilot/mcp-config.json`. Preserves existing `amem` entries. 52 total test assertions.
 - **v0.3.2** — **Scope seed pre-flight.** Installer-side workaround that copied `dev/plugin` → `dev/copilot`. Replaced in v0.4.0.
-- **v0.4.0 (current)** — **Architectural cleanup.** Removed the scope seed workaround after `aman-core@0.3.0` + `acore-core@0.2.0` + `arules-core@0.2.0` shipped library-level scope inheritance. `install-mcp` no longer touches ecosystem files at all. Guarantees `aman-mcp@^0.6.2` via updated pins. 55 total test assertions.
+- **v0.4.0** — **Architectural cleanup.** Removed the scope seed workaround after `aman-core@0.3.0` + `acore-core@0.2.0` + `arules-core@0.2.0` shipped library-level scope inheritance. `install-mcp` no longer touches ecosystem files at all. Guarantees `aman-mcp@^0.6.2` via updated pins.
+- **v0.4.1 (current)** — **Memory interface, not infrastructure.** New `/session-narrative` slash command for preserving the reasoning path of a session. Phrase catalog (save triggers, recall triggers, session closers) embedded in generated `copilot-instructions.md`. Memory 101 section in README. Full [prompt best practices guide](https://github.com/amanasmuei/amem/blob/main/docs/guides/prompt-best-practices.md) shipped in amem. 62 total test assertions.
 - **v0.5** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 

@@ -66,6 +66,8 @@ fi
 echo ""
 echo "Test group 2: init — dev/copilot scope"
 FAKE=$(make_sandbox_home "dev/copilot"); cleanup_dirs+=("$FAKE")
+# Simulate amem being installed so the memory protocol section is emitted.
+mkdir -p "$FAKE/.amem"
 WORK=$(mktemp -d); cleanup_dirs+=("$WORK")
 cd "$WORK"
 HOME="$FAKE" node "$INIT" >/dev/null
@@ -82,7 +84,7 @@ else
   fail "instructions missing dev/copilot content"
 fi
 
-for p in identity rules eval remember; do
+for p in identity rules eval remember session-narrative; do
   if [ -f "$WORK/.github/prompts/$p.prompt.md" ]; then
     pass "writes prompt file: $p.prompt.md"
   else
@@ -93,7 +95,7 @@ done
 # ---------- Test 3: prompt file YAML is parseable ----------
 echo ""
 echo "Test group 3: prompt file YAML"
-for p in identity rules eval remember; do
+for p in identity rules eval remember session-narrative; do
   f="$WORK/.github/prompts/$p.prompt.md"
   # Extract frontmatter between first two --- lines
   if awk '/^---$/{c++; next} c==1' "$f" | node -e '
@@ -115,6 +117,17 @@ echo "Test group 4: session opening protocol"
 INSTR="$WORK/.github/copilot-instructions.md"
 for phrase in "session opening protocol" "identity_read" "memory_inject" "morning energy" "afternoon steadiness" "evening warmth" "late-night care" "one short line of spirit"; do
   if grep -qi "$phrase" "$INSTR"; then
+    pass "instructions contain: \"$phrase\""
+  else
+    fail "instructions missing: \"$phrase\""
+  fi
+done
+
+# ---------- Test 4b: memory phrase catalog present ----------
+echo ""
+echo "Test group 4b: memory phrase catalog in instructions"
+for phrase in "Save triggers" "Recall triggers" "Session closers" "save a session narrative" "memory_tier"; do
+  if grep -q "$phrase" "$INSTR"; then
     pass "instructions contain: \"$phrase\""
   else
     fail "instructions missing: \"$phrase\""
