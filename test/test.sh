@@ -409,6 +409,116 @@ else
   fail "--all missed Copilot CLI target"
 fi
 
+# ---------- Test 18: install-mcp seedCopilotScope — from dev/plugin ----------
+echo ""
+echo "Test group 18: install-mcp — seed dev:copilot scope from dev/plugin"
+SEED_HOME=$(mktemp -d); cleanup_dirs+=("$SEED_HOME")
+mkdir -p "$SEED_HOME/.acore/dev/plugin" "$SEED_HOME/.arules/dev/plugin"
+echo "IDENTITY_FROM_PLUGIN" > "$SEED_HOME/.acore/dev/plugin/core.md"
+echo "RULES_FROM_PLUGIN" > "$SEED_HOME/.arules/dev/plugin/rules.md"
+SEED_VSC=$(mktemp -d); cleanup_dirs+=("$SEED_VSC")
+AMAN_COPILOT_FAKE_HOME="$SEED_HOME" \
+AMAN_COPILOT_VSCODE_USER_DIR="$SEED_VSC" \
+  node "$INSTALL" >/dev/null
+
+if [ -f "$SEED_HOME/.acore/dev/copilot/core.md" ]; then
+  pass "dev/copilot/core.md created"
+else
+  fail "dev/copilot/core.md not created"
+fi
+if grep -q "IDENTITY_FROM_PLUGIN" "$SEED_HOME/.acore/dev/copilot/core.md" 2>/dev/null; then
+  pass "seeded content matches dev/plugin source"
+else
+  fail "seeded content does not match dev/plugin source"
+fi
+if [ -f "$SEED_HOME/.arules/dev/copilot/rules.md" ] && grep -q "RULES_FROM_PLUGIN" "$SEED_HOME/.arules/dev/copilot/rules.md"; then
+  pass "arules seeded from dev/plugin"
+else
+  fail "arules not seeded from dev/plugin"
+fi
+
+# ---------- Test 19: seedCopilotScope — falls back to legacy ----------
+echo ""
+echo "Test group 19: install-mcp — seed from legacy path"
+LEGACY_HOME=$(mktemp -d); cleanup_dirs+=("$LEGACY_HOME")
+mkdir -p "$LEGACY_HOME/.acore" "$LEGACY_HOME/.arules"
+echo "IDENTITY_FROM_LEGACY" > "$LEGACY_HOME/.acore/core.md"
+echo "RULES_FROM_LEGACY" > "$LEGACY_HOME/.arules/rules.md"
+LEGACY_VSC=$(mktemp -d); cleanup_dirs+=("$LEGACY_VSC")
+AMAN_COPILOT_FAKE_HOME="$LEGACY_HOME" \
+AMAN_COPILOT_VSCODE_USER_DIR="$LEGACY_VSC" \
+  node "$INSTALL" >/dev/null
+
+if grep -q "IDENTITY_FROM_LEGACY" "$LEGACY_HOME/.acore/dev/copilot/core.md" 2>/dev/null; then
+  pass "acore falls back from dev/plugin to legacy path"
+else
+  fail "acore did not fall back to legacy"
+fi
+if grep -q "RULES_FROM_LEGACY" "$LEGACY_HOME/.arules/dev/copilot/rules.md" 2>/dev/null; then
+  pass "arules falls back from dev/plugin to legacy path"
+else
+  fail "arules did not fall back to legacy"
+fi
+
+# ---------- Test 20: seedCopilotScope — never overwrites existing dev/copilot ----------
+echo ""
+echo "Test group 20: install-mcp — never overwrites existing dev/copilot"
+NO_CLOBBER_HOME=$(mktemp -d); cleanup_dirs+=("$NO_CLOBBER_HOME")
+mkdir -p "$NO_CLOBBER_HOME/.acore/dev/plugin" "$NO_CLOBBER_HOME/.acore/dev/copilot"
+echo "CUSTOM_COPILOT_IDENTITY" > "$NO_CLOBBER_HOME/.acore/dev/copilot/core.md"
+echo "IDENTITY_FROM_PLUGIN_SHOULD_NOT_REPLACE" > "$NO_CLOBBER_HOME/.acore/dev/plugin/core.md"
+NO_CLOBBER_VSC=$(mktemp -d); cleanup_dirs+=("$NO_CLOBBER_VSC")
+AMAN_COPILOT_FAKE_HOME="$NO_CLOBBER_HOME" \
+AMAN_COPILOT_VSCODE_USER_DIR="$NO_CLOBBER_VSC" \
+  node "$INSTALL" >/dev/null
+
+if grep -q "CUSTOM_COPILOT_IDENTITY" "$NO_CLOBBER_HOME/.acore/dev/copilot/core.md"; then
+  pass "existing dev/copilot/core.md NOT overwritten"
+else
+  fail "existing dev/copilot/core.md was overwritten (regression risk)"
+fi
+
+# ---------- Test 21: seedCopilotScope — handles missing layers gracefully ----------
+echo ""
+echo "Test group 21: install-mcp — seed when no source exists"
+EMPTY_HOME=$(mktemp -d); cleanup_dirs+=("$EMPTY_HOME")
+EMPTY_VSC=$(mktemp -d); cleanup_dirs+=("$EMPTY_VSC")
+# No .acore or .arules at all — seed should no-op with a warning but not crash
+if AMAN_COPILOT_FAKE_HOME="$EMPTY_HOME" \
+   AMAN_COPILOT_VSCODE_USER_DIR="$EMPTY_VSC" \
+   node "$INSTALL" >/dev/null 2>&1; then
+  pass "install-mcp succeeds even with no ecosystem to seed from"
+else
+  fail "install-mcp crashed when no ecosystem source was found"
+fi
+if [ -f "$EMPTY_VSC/mcp.json" ]; then
+  pass "mcp.json still written when scope seed found no source"
+else
+  fail "mcp.json not written when seed failed"
+fi
+
+# ---------- Test 22: --no-seed skips the seed step ----------
+echo ""
+echo "Test group 22: install-mcp --no-seed flag"
+NOSEED_HOME=$(mktemp -d); cleanup_dirs+=("$NOSEED_HOME")
+mkdir -p "$NOSEED_HOME/.acore/dev/plugin"
+echo "should_not_be_copied" > "$NOSEED_HOME/.acore/dev/plugin/core.md"
+NOSEED_VSC=$(mktemp -d); cleanup_dirs+=("$NOSEED_VSC")
+AMAN_COPILOT_FAKE_HOME="$NOSEED_HOME" \
+AMAN_COPILOT_VSCODE_USER_DIR="$NOSEED_VSC" \
+  node "$INSTALL" --no-seed >/dev/null
+
+if [ -f "$NOSEED_HOME/.acore/dev/copilot/core.md" ]; then
+  fail "--no-seed should NOT create dev/copilot files"
+else
+  pass "--no-seed correctly skips seed step"
+fi
+if [ -f "$NOSEED_VSC/mcp.json" ]; then
+  pass "--no-seed still writes mcp.json"
+else
+  fail "--no-seed broke mcp.json write"
+fi
+
 # ---------- Test 17: uninstall-mcp --cli removes only aman, preserves amem ----------
 echo ""
 echo "Test group 17: uninstall-mcp --cli"

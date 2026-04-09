@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.3.2 — 2026-04-09
+
+Scope seed pre-flight. Caught by real-world testing on Copilot CLI: even
+after v0.3.1 fixed the MCP config path, `aman-identity_read` returned
+*"No identity configured"* because `aman-mcp` runs with
+`AMAN_MCP_SCOPE=dev:copilot` and `acore-core` only falls back from the
+new scope to the legacy flat path, not across to sibling scopes like
+`dev:plugin`. So users who set up via `aman-plugin` (writing to
+`~/.acore/dev/plugin/core.md`) would see an empty identity in Copilot.
+
+### Added
+- **`seedCopilotScope()` pre-flight in `install-mcp`** — before writing
+  MCP config, ensures `~/.acore/dev/copilot/core.md` and
+  `~/.arules/dev/copilot/rules.md` exist, copying from `dev/plugin` or
+  the legacy flat path if they're missing. Idempotent: never overwrites
+  existing files.
+- **`--no-seed` flag** for advanced users who want to skip the seed step.
+- **`AMAN_COPILOT_FAKE_HOME` env var** to sandbox HOME during tests.
+- **10 new test assertions** (62 total, was 52) covering:
+  - Seed from `dev/plugin` source
+  - Fallback from `dev/plugin` to legacy flat path
+  - Never-overwrite safety for existing `dev/copilot` files
+  - Graceful handling when no ecosystem source exists
+  - `--no-seed` flag behavior
+
+### Why the installer does this
+Crossing a layer boundary (aman-copilot writing to `~/.acore/`) is
+defensible: `install-mcp` is the transition command that turns a
+plugin-only user into a plugin+copilot user. The scope seed is a
+migration, not data ownership. Future work (tracked for a later
+session): fix `acore-core` and `arules-core` to support scope
+inheritance chains at the library level, at which point this
+installer-side workaround becomes redundant.
+
+### Also fixed by this release
+Complements `aman-mcp@0.6.1` (published separately), which removed the
+`mammoth` dependency that was causing startup crashes on Node 25 due to
+a broken `pako@1.0.11` tarball. The two fixes together deliver full
+behavioral parity across Claude Code, VS Code Copilot Chat, and Copilot
+CLI.
+
 ## 0.3.1 — 2026-04-09
 
 Copilot CLI support. Caught by real-world testing: aman-copilot v0.3.0's

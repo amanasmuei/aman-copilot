@@ -92,6 +92,103 @@ function cliConfigPath() {
   return path.join(os.homedir(), ".copilot", "mcp-config.json");
 }
 
+/**
+ * Pre-flight: ensure the dev:copilot scope has content to read.
+ *
+ * Problem: aman-mcp runs with AMAN_MCP_SCOPE=dev:copilot. It uses acore-core /
+ * arules-core libraries to resolve layer files. Those libraries look for
+ * ~/.acore/dev/copilot/core.md (and arules equivalent), then fall back only to
+ * the legacy flat path ~/.acore/core.md. They do NOT cross-scope fallback to
+ * sibling scopes like dev:plugin.
+ *
+ * This means a user who set up their identity via aman-plugin (writing to
+ * ~/.acore/dev/plugin/core.md) will see aman-mcp return "No identity
+ * configured" in Copilot Chat / Copilot CLI — even though the identity clearly
+ * exists one directory over.
+ *
+ * Fix: before writing MCP config, check if the dev:copilot scope has content.
+ * If not, look for a source (dev/plugin, then legacy), and copy it into
+ * dev:copilot. Idempotent — never overwrites an existing dev:copilot file.
+ *
+ * This crosses a layer boundary (aman-copilot touching ~/.acore/), but it's
+ * defensible: install-mcp is the transition command that turns a plugin-only
+ * user into a plugin+copilot user, so it's the natural place to seed the new
+ * scope. We're doing a migration, not owning the data.
+ *
+ * Future work: acore-core and arules-core should grow a scope-inheritance
+ * mechanism so this seed step becomes redundant. Tracked in future session.
+ */
+async function seedCopilotScope() {
+  const home = process.env.AMAN_COPILOT_FAKE_HOME ?? os.homedir();
+  const layers = [
+    { dir: ".acore", file: "core.md" },
+    { dir: ".arules", file: "rules.md" },
+  ];
+
+  const results = [];
+  for (const layer of layers) {
+    const target = path.join(home, layer.dir, "dev", "copilot", layer.file);
+    // Skip if dev:copilot scope already has content (never overwrite)
+    try {
+      await fs.access(target);
+      results.push({ layer: layer.dir, status: "already present" });
+      continue;
+    } catch {}
+
+    // Find a source: dev/plugin → legacy flat path
+    const sources = [
+      path.join(home, layer.dir, "dev", "plugin", layer.file),
+      path.join(home, layer.dir, layer.file),
+    ];
+    let source = null;
+    for (const s of sources) {
+      try {
+        await fs.access(s);
+        source = s;
+        break;
+      } catch {}
+    }
+
+    if (!source) {
+      results.push({ layer: layer.dir, status: "no source found" });
+      continue;
+    }
+
+    // Copy source → target
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    const content = await fs.readFile(source, "utf-8");
+    await fs.writeFile(target, content, "utf-8");
+    const sourceLabel = source.endsWith(`/dev/plugin/${layer.file}`)
+      ? "dev/plugin"
+      : "legacy";
+    results.push({ layer: layer.dir, status: `seeded from ${sourceLabel}` });
+  }
+
+  // Only print section if we did something or something is missing
+  const didWork = results.some(
+    (r) => r.status.startsWith("seeded") || r.status === "no source found",
+  );
+  if (didWork) {
+    console.log("");
+    console.log("✓ Scope seed (dev:copilot)");
+    for (const r of results) {
+      console.log(`  ${r.layer}: ${r.status}`);
+    }
+  }
+
+  // Warn if any layer has no source at all
+  const missing = results.filter((r) => r.status === "no source found");
+  if (missing.length > 0) {
+    console.log("");
+    console.log(
+      `  Note: ${missing.map((m) => m.layer).join(", ")} — no identity/rules file found in any scope.`,
+    );
+    console.log("  Run: npx @aman_asmuei/aman@latest");
+  }
+
+  return results;
+}
+
 async function loadConfig(target) {
   let raw = null;
   let existed = false;
@@ -152,12 +249,20 @@ async function installTo(targetDef, configPath) {
 
 async function main() {
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: install-mcp [--vscode | --cli | --all]");
+    console.log("Usage: install-mcp [--vscode | --cli | --all] [--no-seed]");
     console.log("");
     console.log("  (default)  Install for VS Code Copilot Chat");
     console.log("  --cli      Install for Copilot CLI only");
     console.log("  --all      Install for both VS Code and Copilot CLI");
+    console.log("  --no-seed  Skip the dev:copilot scope seed pre-flight");
     return;
+  }
+
+  // Pre-flight: ensure the dev:copilot scope has identity/rules files
+  // so aman-mcp (spawned by the MCP config we're about to write) can
+  // actually find them. Skippable via --no-seed for advanced users.
+  if (!args.includes("--no-seed")) {
+    await seedCopilotScope();
   }
 
   const results = [];
