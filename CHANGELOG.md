@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.4.0 — 2026-04-09
+
+**Architectural cleanup.** The installer-side scope seed workaround
+from v0.3.2 is replaced by library-level scope inheritance in the
+`aman-core` / `acore-core` / `arules-core` stack, shipped as
+`aman-core@0.3.0` + `acore-core@0.2.0` + `arules-core@0.2.0` and
+picked up by `aman-mcp@0.6.2`.
+
+### Changed
+- **Removed `seedCopilotScope()` pre-flight** from `install-mcp`.
+  It was the right fix at the wrong layer — now that the core
+  libraries handle scope inheritance transparently, `install-mcp`
+  no longer touches `~/.acore/` or `~/.arules/` at all. It focuses
+  on what it should always have been: writing MCP config.
+- **Removed `--no-seed` flag** (no longer needed).
+- **Removed `AMAN_COPILOT_FAKE_HOME` env var** (test-only, tied to
+  the removed seed function).
+- **Bumped `aman-mcp` pin** from `^0.6.0` to `^0.6.2` in both VS Code
+  and Copilot CLI MCP entries. Every install now guarantees library-
+  level scope inheritance.
+
+### Why this is cleaner
+The v0.3.2 workaround copied files between scopes. That created
+drift risk: edit `dev:plugin`, and `dev:copilot` stayed stale as a
+snapshot. The library-level fix has none of that — `dev:copilot`
+transparently reads `dev:plugin` on every access, so updates are
+always visible. One source of truth, no duplication, no drift.
+
+### Upgrade path
+No user action required. `npm` will pick up `aman-copilot@0.4.0` on
+next install, and the new MCP pin will pull `aman-mcp@0.6.2` with
+scope inheritance. Existing users who have leftover copies in
+`~/.acore/dev/copilot/core.md` from v0.3.2's seed can optionally
+`rm` them — the library will fall back to `dev:plugin` either way,
+but removing the stale copies eliminates the drift risk for future
+`dev:plugin` edits.
+
+### Tests
+55/55 passing (was 62). Removed 10 seed-related assertions; added
+2 new ones confirming `install-mcp` does NOT touch ecosystem files
+and pins `aman-mcp@^0.6.2`.
+
+### Upstream releases in this chain
+- `@aman_asmuei/aman-core@0.3.0` — new `fallbackChain` +
+  `legacyPath` options on `MarkdownFileStorage`, plus
+  `explainRead()` for diagnostics. Backward compatible.
+- `@aman_asmuei/acore-core@0.2.0` — wires the default
+  `dev:* → dev:plugin` policy for identity files.
+- `@aman_asmuei/arules-core@0.2.0` — same policy for ruleset files.
+- `@aman_asmuei/aman-mcp@0.6.2` — picks up all three library bumps;
+  no API changes.
+
 ## 0.3.2 — 2026-04-09
 
 Scope seed pre-flight. Caught by real-world testing on Copilot CLI: even

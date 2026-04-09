@@ -409,115 +409,45 @@ else
   fail "--all missed Copilot CLI target"
 fi
 
-# ---------- Test 18: install-mcp seedCopilotScope — from dev/plugin ----------
+# ---------- Test 18: install-mcp v0.4.0 — scope seed is GONE ----------
+# Prior versions (0.3.2) copied dev/plugin -> dev/copilot as a workaround.
+# That is now handled by aman-mcp@^0.6.2's library-level scope inheritance,
+# so install-mcp no longer touches ~/.acore/ or ~/.arules/ at all.
 echo ""
-echo "Test group 18: install-mcp — seed dev:copilot scope from dev/plugin"
-SEED_HOME=$(mktemp -d); cleanup_dirs+=("$SEED_HOME")
-mkdir -p "$SEED_HOME/.acore/dev/plugin" "$SEED_HOME/.arules/dev/plugin"
-echo "IDENTITY_FROM_PLUGIN" > "$SEED_HOME/.acore/dev/plugin/core.md"
-echo "RULES_FROM_PLUGIN" > "$SEED_HOME/.arules/dev/plugin/rules.md"
-SEED_VSC=$(mktemp -d); cleanup_dirs+=("$SEED_VSC")
-AMAN_COPILOT_FAKE_HOME="$SEED_HOME" \
-AMAN_COPILOT_VSCODE_USER_DIR="$SEED_VSC" \
-  node "$INSTALL" >/dev/null
+echo "Test group 18: install-mcp does NOT touch ecosystem files"
+NO_TOUCH_HOME=$(mktemp -d); cleanup_dirs+=("$NO_TOUCH_HOME")
+mkdir -p "$NO_TOUCH_HOME/.acore/dev/plugin"
+echo "PLUGIN_IDENTITY" > "$NO_TOUCH_HOME/.acore/dev/plugin/core.md"
+NO_TOUCH_VSC=$(mktemp -d); cleanup_dirs+=("$NO_TOUCH_VSC")
+HOME="$NO_TOUCH_HOME" \
+AMAN_COPILOT_VSCODE_USER_DIR="$NO_TOUCH_VSC" \
+  node "$INSTALL" >/dev/null 2>&1
 
-if [ -f "$SEED_HOME/.acore/dev/copilot/core.md" ]; then
-  pass "dev/copilot/core.md created"
+if [ ! -f "$NO_TOUCH_HOME/.acore/dev/copilot/core.md" ]; then
+  pass "install-mcp does NOT create dev/copilot/core.md (library handles inheritance)"
 else
-  fail "dev/copilot/core.md not created"
+  fail "install-mcp still seeded dev/copilot — workaround should be removed"
 fi
-if grep -q "IDENTITY_FROM_PLUGIN" "$SEED_HOME/.acore/dev/copilot/core.md" 2>/dev/null; then
-  pass "seeded content matches dev/plugin source"
+if [ -f "$NO_TOUCH_VSC/mcp.json" ]; then
+  pass "mcp.json still written"
 else
-  fail "seeded content does not match dev/plugin source"
-fi
-if [ -f "$SEED_HOME/.arules/dev/copilot/rules.md" ] && grep -q "RULES_FROM_PLUGIN" "$SEED_HOME/.arules/dev/copilot/rules.md"; then
-  pass "arules seeded from dev/plugin"
-else
-  fail "arules not seeded from dev/plugin"
+  fail "mcp.json not written"
 fi
 
-# ---------- Test 19: seedCopilotScope — falls back to legacy ----------
+# ---------- Test 19: install-mcp pins aman-mcp@^0.6.2 or newer ----------
 echo ""
-echo "Test group 19: install-mcp — seed from legacy path"
-LEGACY_HOME=$(mktemp -d); cleanup_dirs+=("$LEGACY_HOME")
-mkdir -p "$LEGACY_HOME/.acore" "$LEGACY_HOME/.arules"
-echo "IDENTITY_FROM_LEGACY" > "$LEGACY_HOME/.acore/core.md"
-echo "RULES_FROM_LEGACY" > "$LEGACY_HOME/.arules/rules.md"
-LEGACY_VSC=$(mktemp -d); cleanup_dirs+=("$LEGACY_VSC")
-AMAN_COPILOT_FAKE_HOME="$LEGACY_HOME" \
-AMAN_COPILOT_VSCODE_USER_DIR="$LEGACY_VSC" \
-  node "$INSTALL" >/dev/null
-
-if grep -q "IDENTITY_FROM_LEGACY" "$LEGACY_HOME/.acore/dev/copilot/core.md" 2>/dev/null; then
-  pass "acore falls back from dev/plugin to legacy path"
-else
-  fail "acore did not fall back to legacy"
-fi
-if grep -q "RULES_FROM_LEGACY" "$LEGACY_HOME/.arules/dev/copilot/rules.md" 2>/dev/null; then
-  pass "arules falls back from dev/plugin to legacy path"
-else
-  fail "arules did not fall back to legacy"
-fi
-
-# ---------- Test 20: seedCopilotScope — never overwrites existing dev/copilot ----------
-echo ""
-echo "Test group 20: install-mcp — never overwrites existing dev/copilot"
-NO_CLOBBER_HOME=$(mktemp -d); cleanup_dirs+=("$NO_CLOBBER_HOME")
-mkdir -p "$NO_CLOBBER_HOME/.acore/dev/plugin" "$NO_CLOBBER_HOME/.acore/dev/copilot"
-echo "CUSTOM_COPILOT_IDENTITY" > "$NO_CLOBBER_HOME/.acore/dev/copilot/core.md"
-echo "IDENTITY_FROM_PLUGIN_SHOULD_NOT_REPLACE" > "$NO_CLOBBER_HOME/.acore/dev/plugin/core.md"
-NO_CLOBBER_VSC=$(mktemp -d); cleanup_dirs+=("$NO_CLOBBER_VSC")
-AMAN_COPILOT_FAKE_HOME="$NO_CLOBBER_HOME" \
-AMAN_COPILOT_VSCODE_USER_DIR="$NO_CLOBBER_VSC" \
-  node "$INSTALL" >/dev/null
-
-if grep -q "CUSTOM_COPILOT_IDENTITY" "$NO_CLOBBER_HOME/.acore/dev/copilot/core.md"; then
-  pass "existing dev/copilot/core.md NOT overwritten"
-else
-  fail "existing dev/copilot/core.md was overwritten (regression risk)"
-fi
-
-# ---------- Test 21: seedCopilotScope — handles missing layers gracefully ----------
-echo ""
-echo "Test group 21: install-mcp — seed when no source exists"
-EMPTY_HOME=$(mktemp -d); cleanup_dirs+=("$EMPTY_HOME")
-EMPTY_VSC=$(mktemp -d); cleanup_dirs+=("$EMPTY_VSC")
-# No .acore or .arules at all — seed should no-op with a warning but not crash
-if AMAN_COPILOT_FAKE_HOME="$EMPTY_HOME" \
-   AMAN_COPILOT_VSCODE_USER_DIR="$EMPTY_VSC" \
-   node "$INSTALL" >/dev/null 2>&1; then
-  pass "install-mcp succeeds even with no ecosystem to seed from"
-else
-  fail "install-mcp crashed when no ecosystem source was found"
-fi
-if [ -f "$EMPTY_VSC/mcp.json" ]; then
-  pass "mcp.json still written when scope seed found no source"
-else
-  fail "mcp.json not written when seed failed"
-fi
-
-# ---------- Test 22: --no-seed skips the seed step ----------
-echo ""
-echo "Test group 22: install-mcp --no-seed flag"
-NOSEED_HOME=$(mktemp -d); cleanup_dirs+=("$NOSEED_HOME")
-mkdir -p "$NOSEED_HOME/.acore/dev/plugin"
-echo "should_not_be_copied" > "$NOSEED_HOME/.acore/dev/plugin/core.md"
-NOSEED_VSC=$(mktemp -d); cleanup_dirs+=("$NOSEED_VSC")
-AMAN_COPILOT_FAKE_HOME="$NOSEED_HOME" \
-AMAN_COPILOT_VSCODE_USER_DIR="$NOSEED_VSC" \
-  node "$INSTALL" --no-seed >/dev/null
-
-if [ -f "$NOSEED_HOME/.acore/dev/copilot/core.md" ]; then
-  fail "--no-seed should NOT create dev/copilot files"
-else
-  pass "--no-seed correctly skips seed step"
-fi
-if [ -f "$NOSEED_VSC/mcp.json" ]; then
-  pass "--no-seed still writes mcp.json"
-else
-  fail "--no-seed broke mcp.json write"
-fi
+echo "Test group 19: install-mcp pins aman-mcp to scope-inheritance version"
+PIN_VSC=$(mktemp -d); cleanup_dirs+=("$PIN_VSC")
+HOME=$(mktemp -d) AMAN_COPILOT_VSCODE_USER_DIR="$PIN_VSC" node "$INSTALL" >/dev/null 2>&1
+PIN=$(jq -r '.servers.aman.args[1]' "$PIN_VSC/mcp.json")
+case "$PIN" in
+  *aman-mcp@^0.6.2*|*aman-mcp@^0.7*|*aman-mcp@latest*)
+    pass "aman-mcp pin is $PIN (has library-level scope inheritance)"
+    ;;
+  *)
+    fail "aman-mcp pin is $PIN — needs ^0.6.2 or newer for scope inheritance"
+    ;;
+esac
 
 # ---------- Test 17: uninstall-mcp --cli removes only aman, preserves amem ----------
 echo ""

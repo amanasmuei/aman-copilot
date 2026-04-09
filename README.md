@@ -291,8 +291,9 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 - **v0.2** — **Parity pass.** Time-aware greeting, forced-freshness protocol, native slash commands (`/identity`, `/rules`, `/eval`, `/remember`) via prompt files, proactive memory protocol.
 - **v0.3** — **Test hardening + npm publish.** 38 assertions across `init`, `install-mcp`, `uninstall-mcp`. Tag-driven CI/CD with OIDC provenance. Caught an unconditional amem-leak bug.
 - **v0.3.1** — **Copilot CLI support.** `install-mcp --cli` / `--all` flags, targets `~/.copilot/mcp-config.json`. Preserves existing `amem` entries. 52 total test assertions.
-- **v0.3.2 (current)** — **Scope seed pre-flight.** `install-mcp` now copies `~/.acore/dev/plugin/core.md` → `~/.acore/dev/copilot/core.md` (and arules equivalent) on first run, so `aman-mcp` running at `dev:copilot` scope finds the identity instead of returning *"No identity configured"*. 62 total test assertions. Paired with `aman-mcp@0.6.1` to unblock Node 25 users.
-- **v0.4** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings. Explore scope inheritance in `acore-core` / `arules-core` so the installer-side seed becomes unnecessary.
+- **v0.3.2** — **Scope seed pre-flight.** Installer-side workaround that copied `dev/plugin` → `dev/copilot`. Replaced in v0.4.0.
+- **v0.4.0 (current)** — **Architectural cleanup.** Removed the scope seed workaround after `aman-core@0.3.0` + `acore-core@0.2.0` + `arules-core@0.2.0` shipped library-level scope inheritance. `install-mcp` no longer touches ecosystem files at all. Guarantees `aman-mcp@^0.6.2` via updated pins. 55 total test assertions.
+- **v0.5** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 
 See [CHANGELOG.md](CHANGELOG.md) for what's released.
