@@ -20,7 +20,7 @@ Bring your identity, guardrails, memory, and live MCP tools into VS Code — eve
 [![Scope](https://img.shields.io/badge/scope-dev:copilot-informational.svg?style=flat-square)](#scope)
 [![CI](https://img.shields.io/github/actions/workflow/status/amanasmuei/aman-copilot/test.yml?branch=master&style=flat-square&label=tests)](https://github.com/amanasmuei/aman-copilot/actions/workflows/test.yml)
 
-[Quickstart](#quickstart) · [How it Works](#how-it-works) · [Commands](#commands) · [vs aman-plugin](#vs-aman-plugin) · [Troubleshooting](#troubleshooting) · [Ecosystem](#the-ecosystem)
+[Quickstart](#quickstart) · [How it Works](#how-it-works) · [Commands](#commands) · [vs aman-claude-code](#vs-aman-claude-code) · [Troubleshooting](#troubleshooting) · [Ecosystem](#the-ecosystem)
 
 </div>
 
@@ -28,11 +28,11 @@ Bring your identity, guardrails, memory, and live MCP tools into VS Code — eve
 
 ## The Problem
 
-You've set up the aman ecosystem — your identity, your rules, your memory. It works beautifully in Claude Code via [aman-plugin](https://github.com/amanasmuei/aman-plugin). But the moment you switch to **VS Code and GitHub Copilot Chat**, it forgets who you are. Different AI, different context, different personality. The same conversation happens three times.
+You've set up the aman ecosystem — your identity, your rules, your memory. It works beautifully in Claude Code via [aman-claude-code](https://github.com/amanasmuei/aman-claude-code). But the moment you switch to **VS Code and GitHub Copilot Chat**, it forgets who you are. Different AI, different context, different personality. The same conversation happens three times.
 
 ## The Solution
 
-**aman-copilot** is the Copilot Chat adapter for the aman ecosystem. One command writes `copilot-instructions.md` from your identity. Another registers `aman-mcp` and `amem-memory` as MCP servers in VS Code. Restart, and Copilot knows everything aman-plugin knows — because they share the same brain.
+**aman-copilot** is the Copilot Chat adapter for the aman ecosystem. One command writes `copilot-instructions.md` from your identity. Another registers `aman-mcp` and `amem-memory` as MCP servers in VS Code. Restart, and Copilot knows everything aman-claude-code knows — because they share the same brain.
 
 ```bash
 npx @aman_asmuei/aman-copilot init                 # identity + rules → copilot-instructions.md
@@ -74,7 +74,7 @@ This reads your scope-aware `acore` + `arules` files and writes `.github/copilot
 In order, first hit wins:
 
 1. `~/.acore/dev/copilot/core.md` — this plugin's own scope
-2. `~/.acore/dev/plugin/core.md` — inherits from aman-plugin (free for existing users)
+2. `~/.acore/dev/plugin/core.md` — inherits from aman-claude-code (free for existing users)
 3. `~/.acore/core.md` — legacy single-tenant fallback
 
 Same cascade for `arules`. Engine v1 aware.
@@ -140,7 +140,7 @@ Top-level key: `mcpServers` (different from VS Code — this is Claude Code's sc
 
 ## How it Works
 
-aman-copilot is **two thin adapters** over the same brains that power aman-plugin:
+aman-copilot is **two thin adapters** over the same brains that power aman-claude-code:
 
 ```
         ┌─────────────────────────────────────────┐
@@ -149,7 +149,7 @@ aman-copilot is **two thin adapters** over the same brains that power aman-plugi
         └──────┬────────────────────────────┬─────┘
                │                            │
       ┌────────▼────────┐          ┌────────▼────────┐
-      │   aman-plugin   │          │   aman-copilot  │
+      │   aman-claude-code   │          │   aman-copilot  │
       │  (Claude Code)  │          │    (VS Code)    │
       │                 │          │                 │
       │  SessionStart   │          │  copilot-       │
@@ -170,7 +170,7 @@ aman-copilot is **two thin adapters** over the same brains that power aman-plugi
 
 This plugin uses `dev:copilot`. The layer resolver prefers `dev:copilot`-scoped files first, then falls back through `dev:plugin` → legacy. That means:
 
-- **Already an aman-plugin user?** You inherit your identity automatically. No re-config.
+- **Already an aman-claude-code user?** You inherit your identity automatically. No re-config.
 - **Want Copilot-specific personality?** Write `~/.acore/dev/copilot/core.md` and it overrides.
 
 ---
@@ -188,7 +188,7 @@ All commands work via `npx @aman_asmuei/aman-copilot <cmd>` without a global ins
 
 ### After identity changes
 
-Any time you update your aman identity (via CLI, via aman-plugin skills, or directly editing `~/.acore/core.md`), refresh the Copilot instructions file:
+Any time you update your aman identity (via CLI, via aman-claude-code skills, or directly editing `~/.acore/core.md`), refresh the Copilot instructions file:
 
 ```bash
 cd /path/to/project && npx @aman_asmuei/aman-copilot init
@@ -198,19 +198,19 @@ VS Code picks up `.github/copilot-instructions.md` changes automatically — no 
 
 ---
 
-## vs aman-plugin
+## vs aman-claude-code
 
 Both live in the same ecosystem. Pick either, or both.
 
-|  | **aman-plugin** | **aman-copilot** |
+|  | **aman-claude-code** | **aman-copilot** |
 |:---|:---|:---|
 | **Target IDE** | Claude Code | VS Code + Copilot Chat |
 | **Delivery** | `SessionStart` hook injects context into the prompt | Static `copilot-instructions.md`, auto-loaded |
 | **Live tools** | `~/.claude.json` mcpServers | VS Code user-level `mcp.json` |
 | **Slash commands** | `/identity`, `/rules`, `/eval`, … | `/identity`, `/rules`, `/eval`, `/remember` (via prompt files) |
 | **Scope** | `dev:plugin` | `dev:copilot` |
-| **Install** | `claude plugin install aman-plugin@aman` | `npx @aman_asmuei/aman-copilot init && install-mcp` |
-| **Status** | Stable, 20 tests passing | v0.2.0 — parity with aman-plugin |
+| **Install** | `claude plugin install aman-claude-code@aman` | `npx @aman_asmuei/aman-copilot init && install-mcp` |
+| **Status** | Stable, 20 tests passing | v0.2.0 — parity with aman-claude-code |
 
 **Running both?** They don't conflict. The shared layers (`acore`, `arules`, `amem`) are scope-aware — each plugin reads its own scope first, falls back to the other if unset. One identity, two adapters.
 
@@ -314,7 +314,7 @@ aman
 ├── achannel     → channels    → WHERE your AI lives
 ├── aman-mcp     → MCP server  → the bridge (31 tools)
 ├── aman-agent   → agent UI    → chat frontend w/ memory
-├── aman-plugin  → Claude Code integration
+├── aman-claude-code  → Claude Code integration
 └── aman-copilot → VS Code + GitHub Copilot integration  ← YOU ARE HERE
 ```
 
@@ -324,7 +324,7 @@ aman
 | Memory | [amem](https://github.com/amanasmuei/amem) | Persistent knowledge storage (MCP) |
 | Guardrails | [arules](https://github.com/amanasmuei/arules) | Safety boundaries and permissions |
 | MCP Server | [aman-mcp](https://github.com/amanasmuei/aman-mcp) | 31 MCP tools across all layers |
-| Claude Code | [aman-plugin](https://github.com/amanasmuei/aman-plugin) | Claude Code integration |
+| Claude Code | [aman-claude-code](https://github.com/amanasmuei/aman-claude-code) | Claude Code integration |
 | **VS Code** | **aman-copilot** | **GitHub Copilot Chat integration** |
 
 ---
