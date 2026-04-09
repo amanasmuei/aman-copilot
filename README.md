@@ -1,66 +1,330 @@
-# aman-copilot
+<div align="center">
 
-Bring the aman ecosystem (identity, rules, memory, live MCP tools) into **GitHub Copilot Chat** in VS Code.
+<br>
 
-Sibling to [aman-plugin](https://github.com/amanasmuei/aman-plugin) (which does the same for Claude Code). Both share the same brains — `acore`, `arules`, `amem`, `aman-mcp`.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/aman--copilot-GitHub_Copilot-white?style=for-the-badge&labelColor=0d1117&color=58a6ff">
+  <img alt="aman-copilot" src="https://img.shields.io/badge/aman--copilot-GitHub_Copilot-black?style=for-the-badge&labelColor=f6f8fa&color=24292f">
+</picture>
 
-**Scope:** `dev:copilot`
+### The aman companion, now inside GitHub Copilot Chat.
+
+Bring your identity, guardrails, memory, and live MCP tools into VS Code — every chat, zero friction.
+
+<br>
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![aman](https://img.shields.io/badge/part_of-aman_ecosystem-ff6b35.svg?style=flat-square)](https://github.com/amanasmuei/aman)
+[![VS Code](https://img.shields.io/badge/VS_Code-1.102+-007ACC.svg?style=flat-square)](https://code.visualstudio.com)
+[![Copilot](https://img.shields.io/badge/Copilot_Chat-Agent_Mode-24292f.svg?style=flat-square)](https://docs.github.com/copilot)
+[![Scope](https://img.shields.io/badge/scope-dev:copilot-informational.svg?style=flat-square)](#scope)
+
+[Quickstart](#quickstart) · [How it Works](#how-it-works) · [Commands](#commands) · [vs aman-plugin](#vs-aman-plugin) · [Troubleshooting](#troubleshooting) · [Ecosystem](#the-ecosystem)
+
+</div>
+
+---
+
+## The Problem
+
+You've set up the aman ecosystem — your identity, your rules, your memory. It works beautifully in Claude Code via [aman-plugin](https://github.com/amanasmuei/aman-plugin). But the moment you switch to **VS Code and GitHub Copilot Chat**, it forgets who you are. Different AI, different context, different personality. The same conversation happens three times.
+
+## The Solution
+
+**aman-copilot** is the Copilot Chat adapter for the aman ecosystem. One command writes `copilot-instructions.md` from your identity. Another registers `aman-mcp` and `amem-memory` as MCP servers in VS Code. Restart, and Copilot knows everything aman-plugin knows — because they share the same brain.
+
+```bash
+npx @aman_asmuei/aman-copilot init           # identity + rules → copilot-instructions.md
+npx @aman_asmuei/aman-copilot install-mcp    # live tools → VS Code mcp.json
+```
+
+> **Same identity. Same rules. Same memory. Two IDEs.**
+
+---
 
 ## Quickstart
 
+Four steps. Under three minutes.
+
+### Step 1 — Requirements
+
+| Requirement | Check | Get it |
+|:---|:---|:---|
+| **Node.js 18+** | `node --version` | https://nodejs.org |
+| **VS Code 1.102+** | `code --version` | https://code.visualstudio.com |
+| **GitHub Copilot Chat** | VS Code extension | [marketplace](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) |
+| **aman ecosystem** | `ls ~/.acore` | `npx @aman_asmuei/aman@latest` |
+
+> **No ecosystem yet?** Run the one-shot installer first: `npx @aman_asmuei/aman@latest`. It walks you through identity (`acore`), guardrails (`arules`), and relationship tracking (`aeval`). Takes ~90 seconds.
+
+### Step 2 — Write the instructions file
+
+From the root of any project where you want aman context:
+
 ```bash
-# 1. Set up the aman ecosystem (one-time, skip if you already have it)
-npx @aman_asmuei/aman@latest
-
-# 2. Write copilot-instructions.md in the current project
 npx @aman_asmuei/aman-copilot init
-
-# 3. Register aman-mcp + amem-memory in VS Code's user mcp.json
-npx @aman_asmuei/aman-copilot install-mcp
-
-# 4. Restart VS Code, open Copilot Chat in Agent mode
 ```
 
-## What it does
+This reads your scope-aware `acore` + `arules` files and writes `.github/copilot-instructions.md` — which GitHub Copilot Chat auto-loads into every chat turn in that workspace.
 
-| Step | Mechanism | Gives you |
-|:---|:---|:---|
-| `init` | Writes `.github/copilot-instructions.md` from acore + arules | Copilot Chat loads your identity + guardrails into every chat turn |
-| `install-mcp` | Writes `aman` + `amem-memory` into VS Code's `mcp.json` | Live MCP tools: `identity_read`, `memory_store`, `rules_check`, ~60 total |
+<details>
+<summary><b>What layer paths does it resolve?</b></summary>
 
-Both commands are **idempotent** and **preserve other MCP servers** in your config.
+In order, first hit wins:
 
-## Paths
+1. `~/.acore/dev/copilot/core.md` — this plugin's own scope
+2. `~/.acore/dev/plugin/core.md` — inherits from aman-plugin (free for existing users)
+3. `~/.acore/core.md` — legacy single-tenant fallback
 
-- **Instructions:** `./.github/copilot-instructions.md` (project-level, default)
-- **VS Code MCP config:**
-  - macOS: `~/Library/Application Support/Code/User/mcp.json`
-  - Linux: `~/.config/Code/User/mcp.json`
-  - Windows: `%APPDATA%/Code/User/mcp.json`
+Same cascade for `arules`. Engine v1 aware.
+
+</details>
+
+### Step 3 — Install live MCP tools
+
+```bash
+npx @aman_asmuei/aman-copilot install-mcp
+```
+
+This registers two MCP servers in your VS Code user-level `mcp.json`:
+
+| Server | Tools | What it gives you |
+|:---|:---:|:---|
+| **`aman`** | ~31 | `identity_read`, `identity_update_section`, `rules_check`, `rules_add`, `eval_log`, `workflow_list`, … |
+| **`amem-memory`** | ~30 | `memory_store`, `memory_recall`, `memory_inject`, `memory_detail`, `reminder_check`, `memory_doctor`, … |
+
+**Idempotent.** Re-running updates in place. **Preserves all your other MCP servers.** Atomic writes. Cross-platform (macOS, Linux, Windows).
+
+<details>
+<summary><b>Where does it write?</b></summary>
+
+| Platform | Path |
+|:---|:---|
+| macOS | `~/Library/Application Support/Code/User/mcp.json` |
+| Linux | `~/.config/Code/User/mcp.json` |
+| Windows | `%APPDATA%\Code\User\mcp.json` |
+
+Only the `servers.aman` and `servers["amem-memory"]` keys are touched. The `inputs` array and all other servers are preserved byte-for-byte.
+
+</details>
+
+### Step 4 — Activate in VS Code
+
+1. **Restart VS Code** (or `Cmd+Shift+P` → *Developer: Reload Window*)
+2. Open **Copilot Chat** → switch to **Agent mode** (MCP tools only surface in Agent, not Ask)
+3. Verify with one of these:
+
+- [ ] *"Call `identity_read` and tell me who I am."* → should return your acore config
+- [ ] *"What do you remember about me? Use `memory_recall`."* → amem bridge
+- [ ] *"Is force-pushing to main allowed? Check my rules."* → `rules_check` against arules
+
+---
+
+## How it Works
+
+aman-copilot is **two thin adapters** over the same brains that power aman-plugin:
+
+```
+        ┌─────────────────────────────────────────┐
+        │  acore  •  arules  •  amem  •  aman-mcp │
+        │      (shared ecosystem, one truth)      │
+        └──────┬────────────────────────────┬─────┘
+               │                            │
+      ┌────────▼────────┐          ┌────────▼────────┐
+      │   aman-plugin   │          │   aman-copilot  │
+      │  (Claude Code)  │          │    (VS Code)    │
+      │                 │          │                 │
+      │  SessionStart   │          │  copilot-       │
+      │  hook injects   │          │  instructions   │
+      │  into prompt    │          │  .md (static)   │
+      │                 │          │                 │
+      │  ~/.claude.json │          │  mcp.json       │
+      │  mcpServers     │          │  servers        │
+      │                 │          │                 │
+      │  scope:         │          │  scope:         │
+      │  dev:plugin     │          │  dev:copilot    │
+      └─────────────────┘          └─────────────────┘
+```
+
+**Nothing is duplicated.** Edit `~/.acore/core.md` once → re-run `aman-copilot init` → both IDEs see the update.
+
+### Scope
+
+This plugin uses `dev:copilot`. The layer resolver prefers `dev:copilot`-scoped files first, then falls back through `dev:plugin` → legacy. That means:
+
+- **Already an aman-plugin user?** You inherit your identity automatically. No re-config.
+- **Want Copilot-specific personality?** Write `~/.acore/dev/copilot/core.md` and it overrides.
+
+---
 
 ## Commands
 
-```
-aman-copilot init            # write copilot-instructions.md
-aman-copilot install-mcp     # register MCP servers in VS Code
-aman-copilot uninstall-mcp   # remove MCP servers
+```bash
+aman-copilot init            # write .github/copilot-instructions.md
+aman-copilot install-mcp     # register aman + amem-memory in VS Code
+aman-copilot uninstall-mcp   # remove the aman entries (preserves others)
+aman-copilot --help          # show usage
 ```
 
-## How it differs from aman-plugin
+All commands work via `npx @aman_asmuei/aman-copilot <cmd>` without a global install.
 
-| | aman-plugin (Claude Code) | aman-copilot (VS Code) |
+### After identity changes
+
+Any time you update your aman identity (via CLI, via aman-plugin skills, or directly editing `~/.acore/core.md`), refresh the Copilot instructions file:
+
+```bash
+cd /path/to/project && npx @aman_asmuei/aman-copilot init
+```
+
+VS Code picks up `.github/copilot-instructions.md` changes automatically — no restart needed.
+
+---
+
+## vs aman-plugin
+
+Both live in the same ecosystem. Pick either, or both.
+
+|  | **aman-plugin** | **aman-copilot** |
 |:---|:---|:---|
-| Delivery | `SessionStart` hook injects context | Static `copilot-instructions.md` |
-| Live tools | `~/.claude.json` mcpServers | VS Code `mcp.json` servers |
-| Scope | `dev:plugin` | `dev:copilot` |
-| Slash commands | `/identity`, `/rules`, … | via Copilot Chat `@workspace` + MCP tools |
+| **Target IDE** | Claude Code | VS Code + Copilot Chat |
+| **Delivery** | `SessionStart` hook injects context into the prompt | Static `copilot-instructions.md`, auto-loaded |
+| **Live tools** | `~/.claude.json` mcpServers | VS Code user-level `mcp.json` |
+| **Slash commands** | `/identity`, `/rules`, `/eval`, … | via Copilot Chat Agent mode + MCP tool calls |
+| **Scope** | `dev:plugin` | `dev:copilot` |
+| **Install** | `claude plugin install aman-plugin@aman` | `npx @aman_asmuei/aman-copilot init && install-mcp` |
+| **Status** | Stable, 20 tests passing | v0.1.0 initial release |
 
-Identity, rules, and memory are **shared** — editing `~/.acore/core.md` updates both. Run `aman-copilot init` after identity changes to refresh the instructions file.
+**Running both?** They don't conflict. The shared layers (`acore`, `arules`, `amem`) are scope-aware — each plugin reads its own scope first, falls back to the other if unset. One identity, two adapters.
 
-## Status
+---
 
-**v0.1.0 — initial scaffold.** Working but minimal. No tests yet, no VS Code extension wrapper, no `@aman` chat participant. Those are future work.
+## Troubleshooting
+
+<details>
+<summary><b>Copilot doesn't seem to know my identity.</b></summary>
+
+1. **Did you restart VS Code?** Instructions files are loaded on workspace open.
+2. **Check the file exists:**
+   ```bash
+   cat .github/copilot-instructions.md | head -20
+   ```
+3. **Check Copilot is reading instructions files.** In VS Code settings, search for `github.copilot.chat.codeGeneration.useInstructionFiles` — it should be `true` (default).
+4. **Are you in the right workspace?** Project-level instructions only apply when that project is open.
+
+</details>
+
+<details>
+<summary><b>MCP tools (<code>identity_read</code>, <code>memory_store</code>) aren't available in Copilot Chat.</b></summary>
+
+1. **Are you in Agent mode?** MCP tools only surface in Copilot Chat's *Agent* mode, not *Ask* or *Edit*. Toggle via the mode dropdown in the chat input.
+2. **Did you restart VS Code** after running `install-mcp`? MCP servers load on startup.
+3. **Check the config:**
+   ```bash
+   cat "$HOME/Library/Application Support/Code/User/mcp.json" | jq '.servers.aman, .servers["amem-memory"]'
+   ```
+4. **Check the server is reachable:**
+   ```bash
+   npx -y @aman_asmuei/aman-mcp@^0.6.0 --help
+   ```
+5. **View MCP logs** in VS Code: `Cmd+Shift+P` → *MCP: List Servers* → pick `aman` → *Show Output*.
+
+</details>
+
+<details>
+<summary><b>The installer complained about malformed mcp.json.</b></summary>
+
+The installer refuses to overwrite a file it can't parse as JSON — by design, to protect your other servers. Fix the JSON manually (or restore from backup), then re-run `install-mcp`.
+
+</details>
+
+<details>
+<summary><b>I want Copilot to use a different identity from Claude Code.</b></summary>
+
+Write a scope-specific identity file:
+
+```bash
+mkdir -p ~/.acore/dev/copilot
+cp ~/.acore/dev/plugin/core.md ~/.acore/dev/copilot/core.md
+# edit ~/.acore/dev/copilot/core.md to taste
+aman-copilot init
+```
+
+The layer resolver prefers `dev/copilot` over `dev/plugin`, so Copilot gets the override and Claude Code is unaffected.
+
+</details>
+
+<details>
+<summary><b>How do I uninstall everything?</b></summary>
+
+```bash
+npx @aman_asmuei/aman-copilot uninstall-mcp      # removes aman + amem from mcp.json
+rm .github/copilot-instructions.md               # per-project, as needed
+```
+
+The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — other tools use it. Only remove that if you're uninstalling the whole aman ecosystem.
+
+</details>
+
+---
+
+## Roadmap
+
+- **v0.1 (current)** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
+- **v0.2** — Test suite mirroring aman-plugin's 20-test harness. npm publish.
+- **v0.3** — VS Code extension wrapper with `@aman` chat participant for native `/identity`, `/rules`, `/eval` commands in Copilot Chat.
+- **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
+
+See [CHANGELOG.md](CHANGELOG.md) for what's released.
+
+---
+
+## The Ecosystem
+
+```
+aman
+├── acore        → identity    → who your AI IS
+├── amem         → memory      → what your AI KNOWS
+├── akit         → tools       → what your AI CAN DO
+├── aflow        → workflows   → HOW your AI works
+├── arules       → guardrails  → what your AI WON'T do
+├── askill       → skills      → what your AI MASTERS
+├── aeval        → evaluation  → how GOOD your AI is
+├── achannel     → channels    → WHERE your AI lives
+├── aman-mcp     → MCP server  → the bridge (31 tools)
+├── aman-agent   → agent UI    → chat frontend w/ memory
+├── aman-plugin  → Claude Code integration
+└── aman-copilot → VS Code + GitHub Copilot integration  ← YOU ARE HERE
+```
+
+| Layer | Package | What it does |
+|:---|:---|:---|
+| Identity | [acore](https://github.com/amanasmuei/acore) | Personality, values, relationship memory |
+| Memory | [amem](https://github.com/amanasmuei/amem) | Persistent knowledge storage (MCP) |
+| Guardrails | [arules](https://github.com/amanasmuei/arules) | Safety boundaries and permissions |
+| MCP Server | [aman-mcp](https://github.com/amanasmuei/aman-mcp) | 31 MCP tools across all layers |
+| Claude Code | [aman-plugin](https://github.com/amanasmuei/aman-plugin) | Claude Code integration |
+| **VS Code** | **aman-copilot** | **GitHub Copilot Chat integration** |
+
+---
+
+## Contributing
+
+Contributions welcome.
+
+1. Open an issue before sending a PR for anything non-trivial.
+2. Keep changes scope-aware — never break the `dev/copilot` → `dev/plugin` → legacy fallback chain.
+3. Update [`CHANGELOG.md`](CHANGELOG.md) under the next unreleased version.
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+
+**One identity. Two IDEs. Zero duplication.**
+
+<sub>Built with care as part of the <a href="https://github.com/amanasmuei/aman">aman ecosystem</a>.</sub>
+
+</div>
