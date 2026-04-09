@@ -1,0 +1,47 @@
+name: test
+
+# Security note: this workflow uses no untrusted inputs. `matrix.node` is a
+# literal defined in this file, not user-controlled. No github.event.* values
+# are interpolated into run: steps.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq jq
+          fi
+          jq --version
+
+      - name: Show versions
+        run: |
+          node --version
+          bash --version | head -1
+          jq --version
+
+      - name: Run test suite
+        run: bash test/test.sh
