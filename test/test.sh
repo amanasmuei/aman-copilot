@@ -306,6 +306,129 @@ else
   fail "uninstall crashed on missing mcp.json"
 fi
 
+# ---------- Test 13: install-mcp --cli creates Copilot CLI config ----------
+echo ""
+echo "Test group 13: install-mcp --cli — Copilot CLI fresh config"
+CLI_SBOX=$(mktemp -d); cleanup_dirs+=("$CLI_SBOX")
+CLI_CFG="$CLI_SBOX/mcp-config.json"
+AMAN_COPILOT_CLI_CONFIG="$CLI_CFG" node "$INSTALL" --cli >/dev/null
+if [ -f "$CLI_CFG" ]; then
+  pass "install --cli creates mcp-config.json when missing"
+else
+  fail "mcp-config.json not created"
+fi
+if jq -e '.mcpServers.aman.command == "npx"' "$CLI_CFG" >/dev/null; then
+  pass "CLI config uses mcpServers key (not servers)"
+else
+  fail "CLI config uses wrong top-level key"
+fi
+if jq -e '.mcpServers.aman.env.AMAN_MCP_SCOPE == "dev:copilot"' "$CLI_CFG" >/dev/null; then
+  pass "CLI aman entry has scope dev:copilot"
+else
+  fail "CLI aman scope wrong"
+fi
+# Importantly: --cli should NOT add amem-memory (preserves existing amem config)
+if jq -e '.mcpServers["amem-memory"]' "$CLI_CFG" >/dev/null 2>&1; then
+  fail "--cli should NOT add amem-memory (would clobber existing amem setups)"
+else
+  pass "--cli correctly skips amem-memory entry"
+fi
+
+# ---------- Test 14: install-mcp --cli preserves existing amem entry ----------
+echo ""
+echo "Test group 14: install-mcp --cli — preserves existing servers"
+CLI_SBOX2=$(mktemp -d); cleanup_dirs+=("$CLI_SBOX2")
+CLI_CFG2="$CLI_SBOX2/mcp-config.json"
+cat > "$CLI_CFG2" <<'EOF'
+{
+  "mcpServers": {
+    "amem": {
+      "command": "npx",
+      "args": ["-y", "@aman_asmuei/amem"]
+    },
+    "some-other": {
+      "command": "some-other-cmd",
+      "args": []
+    }
+  }
+}
+EOF
+AMAN_COPILOT_CLI_CONFIG="$CLI_CFG2" node "$INSTALL" --cli >/dev/null
+
+if jq -e '.mcpServers.amem.command == "npx"' "$CLI_CFG2" >/dev/null; then
+  pass "existing amem entry preserved untouched"
+else
+  fail "existing amem entry was clobbered"
+fi
+if jq -e '.mcpServers["some-other"].command == "some-other-cmd"' "$CLI_CFG2" >/dev/null; then
+  pass "other servers preserved"
+else
+  fail "other servers clobbered"
+fi
+if jq -e '.mcpServers.aman.command == "npx"' "$CLI_CFG2" >/dev/null; then
+  pass "aman entry added alongside existing servers"
+else
+  fail "aman entry not added"
+fi
+if [ "$(jq '.mcpServers | length' "$CLI_CFG2")" = "3" ]; then
+  pass "server count went from 2 to 3 (added aman only)"
+else
+  fail "unexpected server count"
+fi
+
+# ---------- Test 15: install-mcp --cli is idempotent ----------
+echo ""
+echo "Test group 15: install-mcp --cli — idempotency"
+BEFORE_CLI=$(jq -S . "$CLI_CFG2")
+AMAN_COPILOT_CLI_CONFIG="$CLI_CFG2" node "$INSTALL" --cli >/dev/null
+AFTER_CLI=$(jq -S . "$CLI_CFG2")
+if [ "$BEFORE_CLI" = "$AFTER_CLI" ]; then
+  pass "re-running install --cli produces identical output"
+else
+  fail "install --cli is not idempotent"
+fi
+
+# ---------- Test 16: install-mcp --all writes to both targets ----------
+echo ""
+echo "Test group 16: install-mcp --all — both targets"
+VSC_SBOX=$(mktemp -d); cleanup_dirs+=("$VSC_SBOX")
+CLI_SBOX3=$(mktemp -d); cleanup_dirs+=("$CLI_SBOX3")
+CLI_CFG3="$CLI_SBOX3/mcp-config.json"
+AMAN_COPILOT_VSCODE_USER_DIR="$VSC_SBOX" \
+AMAN_COPILOT_CLI_CONFIG="$CLI_CFG3" \
+  node "$INSTALL" --all >/dev/null
+
+if jq -e '.servers.aman' "$VSC_SBOX/mcp.json" >/dev/null; then
+  pass "--all wrote to VS Code mcp.json"
+else
+  fail "--all missed VS Code target"
+fi
+if jq -e '.mcpServers.aman' "$CLI_CFG3" >/dev/null; then
+  pass "--all wrote to Copilot CLI mcp-config.json"
+else
+  fail "--all missed Copilot CLI target"
+fi
+
+# ---------- Test 17: uninstall-mcp --cli removes only aman, preserves amem ----------
+echo ""
+echo "Test group 17: uninstall-mcp --cli"
+AMAN_COPILOT_CLI_CONFIG="$CLI_CFG2" node "$UNINSTALL" --cli >/dev/null
+if jq -e '.mcpServers.amem.command == "npx"' "$CLI_CFG2" >/dev/null; then
+  pass "uninstall --cli preserved existing amem"
+else
+  fail "uninstall --cli removed amem (should not)"
+fi
+if jq -e '.mcpServers.aman' "$CLI_CFG2" >/dev/null 2>&1; then
+  fail "uninstall --cli did not remove aman"
+else
+  pass "uninstall --cli removed aman"
+fi
+if jq -e '.mcpServers["some-other"]' "$CLI_CFG2" >/dev/null; then
+  pass "uninstall --cli preserved other servers"
+else
+  fail "uninstall --cli clobbered other servers"
+fi
+
 # ---------- Summary ----------
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

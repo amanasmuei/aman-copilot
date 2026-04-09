@@ -1,107 +1,189 @@
 #!/usr/bin/env node
 /**
- * install-mcp.mjs — Register aman-mcp + amem-memory in VS Code's mcp.json.
+ * install-mcp.mjs — Register aman MCP server(s) for GitHub Copilot surfaces.
  *
- * VS Code 1.102+ reads MCP servers from a user-level mcp.json at:
+ * Default target: VS Code Copilot Chat user-level mcp.json at:
  *   macOS:   ~/Library/Application Support/Code/User/mcp.json
  *   Linux:   ~/.config/Code/User/mcp.json
  *   Windows: %APPDATA%/Code/User/mcp.json
  *
- * GitHub Copilot Chat (agent mode) will discover and use these servers.
+ * With --cli: Copilot CLI config at ~/.copilot/mcp-config.json.
  *
- * Idempotent: re-running updates existing entries, preserves other servers.
- * Scope: AMAN_MCP_SCOPE=dev:copilot
+ * With --all: write to BOTH targets in one call.
+ *
+ * Both are idempotent. Both preserve all other servers in the target file.
+ * Atomic writes via tmp + rename.
  */
 
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-const ENTRIES = {
-  aman: {
-    command: "npx",
-    args: ["-y", "@aman_asmuei/aman-mcp@^0.6.0"],
-    env: { AMAN_MCP_SCOPE: "dev:copilot" },
+const args = process.argv.slice(2);
+const wantCli = args.includes("--cli");
+const wantAll = args.includes("--all");
+const wantVscode = args.includes("--vscode") || (!wantCli && !wantAll);
+
+// Target definitions. Each target has its own file path, top-level key, and
+// entry shape — because VS Code and Copilot CLI use subtly different schemas.
+
+/**
+ * VS Code Copilot Chat — uses `servers` key, supports `env` block.
+ * Writes aman + amem-memory entries.
+ */
+const VSCODE_TARGET = {
+  name: "VS Code (Copilot Chat)",
+  topKey: "servers",
+  entries: {
+    aman: {
+      command: "npx",
+      args: ["-y", "@aman_asmuei/aman-mcp@^0.6.0"],
+      env: { AMAN_MCP_SCOPE: "dev:copilot" },
+    },
+    "amem-memory": {
+      command: "npx",
+      args: ["-y", "@aman_asmuei/amem@latest", "mcp"],
+      env: { AMAN_MCP_SCOPE: "dev:copilot" },
+    },
   },
-  "amem-memory": {
-    command: "npx",
-    args: ["-y", "@aman_asmuei/amem@latest", "mcp"],
-    env: { AMAN_MCP_SCOPE: "dev:copilot" },
-  },
+  // Only overwrite these entries by default — any other key in topKey is preserved.
+  alwaysOverwrite: new Set(["aman", "amem-memory"]),
 };
 
-function vscodeUserDir() {
-  // Test override: point at a sandbox dir instead of the real VS Code config.
+/**
+ * Copilot CLI — uses `mcpServers` key, same shape as Claude Code's
+ * ~/.claude.json. Only adds the aman entry by default because many users
+ * already have an `amem` entry from `npx @aman_asmuei/amem init` that
+ * predates aman-copilot — we must not clobber working config.
+ */
+const CLI_TARGET = {
+  name: "Copilot CLI",
+  topKey: "mcpServers",
+  entries: {
+    aman: {
+      command: "npx",
+      args: ["-y", "@aman_asmuei/aman-mcp@^0.6.0"],
+      env: { AMAN_MCP_SCOPE: "dev:copilot" },
+    },
+  },
+  alwaysOverwrite: new Set(["aman"]),
+};
+
+function vscodeConfigPath() {
   if (process.env.AMAN_COPILOT_VSCODE_USER_DIR) {
-    return process.env.AMAN_COPILOT_VSCODE_USER_DIR;
+    return path.join(process.env.AMAN_COPILOT_VSCODE_USER_DIR, "mcp.json");
   }
-  const platform = process.platform;
-  if (platform === "darwin") {
-    return path.join(
-      os.homedir(),
-      "Library",
-      "Application Support",
-      "Code",
-      "User",
-    );
+  const home = os.homedir();
+  if (process.platform === "darwin") {
+    return path.join(home, "Library", "Application Support", "Code", "User", "mcp.json");
   }
-  if (platform === "win32") {
-    const appData = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
-    return path.join(appData, "Code", "User");
+  if (process.platform === "win32") {
+    const appData = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
+    return path.join(appData, "Code", "User", "mcp.json");
   }
-  // linux + others
-  const xdg = process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config");
-  return path.join(xdg, "Code", "User");
+  const xdg = process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
+  return path.join(xdg, "Code", "User", "mcp.json");
 }
 
-async function main() {
-  const userDir = vscodeUserDir();
-  const target = path.join(userDir, "mcp.json");
+function cliConfigPath() {
+  if (process.env.AMAN_COPILOT_CLI_CONFIG) {
+    return process.env.AMAN_COPILOT_CLI_CONFIG;
+  }
+  return path.join(os.homedir(), ".copilot", "mcp-config.json");
+}
 
-  let config = { servers: {} };
+async function loadConfig(target) {
+  let raw = null;
   let existed = false;
   try {
-    const raw = await fs.readFile(target, "utf-8");
+    raw = await fs.readFile(target, "utf-8");
     existed = true;
+  } catch {}
+
+  let config = {};
+  if (raw !== null && raw.trim() !== "") {
     try {
-      config = raw.trim() === "" ? { servers: {} } : JSON.parse(raw);
+      config = JSON.parse(raw);
     } catch (err) {
-      console.error(`Failed to parse ${target} as JSON: ${err.message}`);
-      console.error("Refusing to overwrite a malformed config file.");
-      process.exit(1);
+      throw new Error(
+        `Failed to parse ${target} as JSON: ${err.message}\nRefusing to overwrite a malformed config file.`,
+      );
     }
-  } catch {
-    // doesn't exist yet — we'll create it
   }
+  return { config, existed };
+}
 
-  if (!config.servers || typeof config.servers !== "object") {
-    config.servers = {};
-  }
-
-  const updated = [];
-  for (const [name, value] of Object.entries(ENTRIES)) {
-    const had = config.servers[name] !== undefined;
-    config.servers[name] = value;
-    updated.push(`${had ? "updated" : "added"} ${name}`);
-  }
-
-  await fs.mkdir(userDir, { recursive: true });
+async function writeConfig(target, config) {
+  await fs.mkdir(path.dirname(target), { recursive: true });
   const tmp = `${target}.aman-install.tmp`;
   await fs.writeFile(tmp, JSON.stringify(config, null, 2) + "\n", "utf-8");
   await fs.rename(tmp, target);
+}
+
+async function installTo(targetDef, configPath) {
+  let loaded;
+  try {
+    loaded = await loadConfig(configPath);
+  } catch (err) {
+    console.error(err.message);
+    return { ok: false };
+  }
+  const { config, existed } = loaded;
+
+  if (!config[targetDef.topKey] || typeof config[targetDef.topKey] !== "object") {
+    config[targetDef.topKey] = {};
+  }
+
+  const updates = [];
+  for (const [name, value] of Object.entries(targetDef.entries)) {
+    const had = config[targetDef.topKey][name] !== undefined;
+    config[targetDef.topKey][name] = value;
+    updates.push(`${had ? "updated" : "added"} ${name}`);
+  }
+
+  await writeConfig(configPath, config);
 
   console.log("");
-  console.log(`✓ ${existed ? "Updated" : "Created"} ${target}`);
-  for (const line of updated) console.log(`  ${line}`);
+  console.log(`✓ ${targetDef.name}`);
+  console.log(`  ${existed ? "Updated" : "Created"}: ${configPath}`);
+  for (const u of updates) console.log(`  ${u}`);
+  return { ok: true };
+}
+
+async function main() {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("Usage: install-mcp [--vscode | --cli | --all]");
+    console.log("");
+    console.log("  (default)  Install for VS Code Copilot Chat");
+    console.log("  --cli      Install for Copilot CLI only");
+    console.log("  --all      Install for both VS Code and Copilot CLI");
+    return;
+  }
+
+  const results = [];
+  if (wantAll || wantVscode) {
+    results.push(await installTo(VSCODE_TARGET, vscodeConfigPath()));
+  }
+  if (wantAll || wantCli) {
+    results.push(await installTo(CLI_TARGET, cliConfigPath()));
+  }
+
+  if (results.some((r) => !r.ok)) {
+    process.exit(1);
+  }
+
   console.log("");
   console.log("Scope: AMAN_MCP_SCOPE=dev:copilot");
   console.log("");
   console.log("Next:");
-  console.log("  1. Restart VS Code (or reload window).");
-  console.log("  2. Open Copilot Chat in Agent mode.");
-  console.log('  3. Ask: "call identity_read and tell me who I am."');
+  if (wantAll || wantVscode) {
+    console.log("  VS Code:     restart VS Code, open Copilot Chat (Agent mode)");
+  }
+  if (wantAll || wantCli) {
+    console.log("  Copilot CLI: restart `copilot` in a new terminal");
+  }
+  console.log('  Then ask: "call identity_read and tell me who I am."');
   console.log("");
-  console.log("To remove: aman-copilot uninstall-mcp");
 }
 
 main().catch((err) => {

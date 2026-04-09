@@ -35,11 +35,11 @@ You've set up the aman ecosystem — your identity, your rules, your memory. It 
 **aman-copilot** is the Copilot Chat adapter for the aman ecosystem. One command writes `copilot-instructions.md` from your identity. Another registers `aman-mcp` and `amem-memory` as MCP servers in VS Code. Restart, and Copilot knows everything aman-plugin knows — because they share the same brain.
 
 ```bash
-npx @aman_asmuei/aman-copilot init           # identity + rules → copilot-instructions.md
-npx @aman_asmuei/aman-copilot install-mcp    # live tools → VS Code mcp.json
+npx @aman_asmuei/aman-copilot init                 # identity + rules → copilot-instructions.md
+npx @aman_asmuei/aman-copilot install-mcp --all    # live tools → VS Code + Copilot CLI
 ```
 
-> **Same identity. Same rules. Same memory. Two IDEs.**
+> **Same identity. Same rules. Same memory. Two IDEs, one terminal CLI.**
 
 ---
 
@@ -83,11 +83,20 @@ Same cascade for `arules`. Engine v1 aware.
 
 ### Step 3 — Install live MCP tools
 
+Pick your target:
+
 ```bash
+# VS Code Copilot Chat (default)
 npx @aman_asmuei/aman-copilot install-mcp
+
+# Copilot CLI (standalone terminal agent)
+npx @aman_asmuei/aman-copilot install-mcp --cli
+
+# Both at once
+npx @aman_asmuei/aman-copilot install-mcp --all
 ```
 
-This registers two MCP servers in your VS Code user-level `mcp.json`:
+This registers MCP servers in the appropriate config file(s):
 
 | Server | Tools | What it gives you |
 |:---|:---:|:---|
@@ -99,13 +108,21 @@ This registers two MCP servers in your VS Code user-level `mcp.json`:
 <details>
 <summary><b>Where does it write?</b></summary>
 
+**VS Code Copilot Chat** (`install-mcp` or `install-mcp --vscode`):
+
 | Platform | Path |
 |:---|:---|
 | macOS | `~/Library/Application Support/Code/User/mcp.json` |
 | Linux | `~/.config/Code/User/mcp.json` |
 | Windows | `%APPDATA%\Code\User\mcp.json` |
 
-Only the `servers.aman` and `servers["amem-memory"]` keys are touched. The `inputs` array and all other servers are preserved byte-for-byte.
+Top-level key: `servers`. Adds `aman` and `amem-memory`. The `inputs` array and all other servers are preserved byte-for-byte.
+
+**Copilot CLI** (`install-mcp --cli`):
+
+- All platforms: `~/.copilot/mcp-config.json`
+
+Top-level key: `mcpServers` (different from VS Code — this is Claude Code's schema). Adds **only** `aman`. Any existing `amem` entry from `npx @aman_asmuei/amem` is preserved untouched — we never clobber working config.
 
 </details>
 
@@ -272,8 +289,9 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 
 - **v0.1** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
 - **v0.2** — **Parity pass.** Time-aware greeting, forced-freshness protocol, native slash commands (`/identity`, `/rules`, `/eval`, `/remember`) via prompt files, proactive memory protocol.
-- **v0.3 (current)** — **Test hardening.** 38 assertions across `init`, `install-mcp`, and `uninstall-mcp`. Sandboxed via `AMAN_COPILOT_VSCODE_USER_DIR`. Caught and fixed an unconditional amem-leak bug. CI-ready.
-- **v0.4** — npm publish. VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
+- **v0.3** — **Test hardening + npm publish.** 38 assertions across `init`, `install-mcp`, `uninstall-mcp`. Tag-driven CI/CD with OIDC provenance. Caught an unconditional amem-leak bug.
+- **v0.3.1 (current)** — **Copilot CLI support.** `install-mcp --cli` / `--all` flags, targets `~/.copilot/mcp-config.json`. Preserves existing `amem` entries. 52 total test assertions.
+- **v0.4** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 
 See [CHANGELOG.md](CHANGELOG.md) for what's released.

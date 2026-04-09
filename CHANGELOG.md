@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.3.1 — 2026-04-09
+
+Copilot CLI support. Caught by real-world testing: aman-copilot v0.3.0's
+`install-mcp` only wrote to VS Code's `mcp.json`, not to Copilot CLI's
+separate `~/.copilot/mcp-config.json`. Users of the standalone Copilot CLI
+got the greeting protocol (from the plugin-system carry-over) but no live
+`aman` MCP tools — `identity_read` was missing from the tool list.
+
+### Added
+- **`install-mcp --cli` flag** — writes to `~/.copilot/mcp-config.json`
+  with the correct `mcpServers` key (Claude Code-style) and
+  Copilot-CLI-compatible entry shape.
+- **`install-mcp --all` flag** — writes to both VS Code and Copilot CLI
+  targets in one call, for users who want parity everywhere.
+- **`install-mcp --vscode` flag** — explicit opt-in for the default
+  behavior (backwards compatible; bare `install-mcp` still means VS Code).
+- **Matching `uninstall-mcp --cli` and `--all`** flags.
+- **`AMAN_COPILOT_CLI_CONFIG` env var** to redirect the CLI target during
+  tests (parallels `AMAN_COPILOT_VSCODE_USER_DIR`).
+- **14 new test assertions** covering: fresh CLI config creation, key
+  schema (`mcpServers` not `servers`), preservation of pre-existing
+  `amem` entries (critical: users have `amem` from `npx @aman_asmuei/amem`
+  that predates aman-copilot and must not be clobbered), `--all`
+  dual-target, idempotency, and selective uninstall.
+
+### Why `--cli` doesn't touch `amem-memory`
+The VS Code target adds both `aman` and `amem-memory` because VS Code has
+no other installer for amem. But Copilot CLI users typically already have
+an `amem` entry from `npx @aman_asmuei/amem` (which works). Overwriting
+it with a different name/shape (`amem-memory` + `@latest mcp` subcommand)
+would clobber working config. The CLI target adds only `aman`.
+
+### Test coverage
+52 assertions total (was 38). `bash test/test.sh`.
+
 ## 0.3.0 — 2026-04-09
 
 Test hardening. First CI-ready release.
