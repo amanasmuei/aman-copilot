@@ -18,7 +18,7 @@ Bring your identity, guardrails, memory, and live MCP tools into VS Code — eve
 [![VS Code](https://img.shields.io/badge/VS_Code-1.102+-007ACC.svg?style=flat-square)](https://code.visualstudio.com)
 [![Copilot](https://img.shields.io/badge/Copilot_Chat-Agent_Mode-24292f.svg?style=flat-square)](https://docs.github.com/copilot)
 [![Scope](https://img.shields.io/badge/scope-dev:copilot-informational.svg?style=flat-square)](#scope)
-[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg?style=flat-square)](./test/test.sh)
+[![CI](https://img.shields.io/github/actions/workflow/status/amanasmuei/aman-copilot/test.yml?branch=master&style=flat-square&label=tests)](https://github.com/amanasmuei/aman-copilot/actions/workflows/test.yml)
 
 [Quickstart](#quickstart) · [How it Works](#how-it-works) · [Commands](#commands) · [vs aman-plugin](#vs-aman-plugin) · [Troubleshooting](#troubleshooting) · [Ecosystem](#the-ecosystem)
 
