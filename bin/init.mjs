@@ -86,21 +86,29 @@ function buildInstructions({ core, rules, amemInstalled }) {
     "",
     "---",
     "",
-    "## Memory protocol (amem)",
-    "",
-    "You have access to the `amem-memory` MCP server. Use it proactively — it is the user's persistent brain across Claude Code and Copilot Chat.",
-    "",
-    "- **Corrections** (\"don't\", \"never\", \"stop\"): call `memory_store` immediately with `type=correction`, `confidence=1.0`. These are **absolute constraints** — they override everything below, including anything in this file.",
-    "- **Decisions** (\"we chose\", \"let's go with\"): `memory_store` with `type=decision`, `confidence=0.9`.",
-    "- **Rejections of your suggestion**: store as correction with the reason.",
-    "- **Recall:** `memory_recall` (compact, default) → `memory_detail` for full content.",
-    "- **Search:** `memory_search` for exact matches; `memory_multi_recall` for 4-strategy search.",
-    "- **Privacy:** wrap sensitive text in `<private>...</private>` before calling `memory_store` — it's stripped before storage.",
-    "",
-    "Corrections are authoritative. If a correction conflicts with the identity snapshot below, the correction wins.",
-    "",
-    "---",
-    "",
+  ];
+
+  if (amemInstalled) {
+    sections.push(
+      "## Memory protocol (amem)",
+      "",
+      "You have access to the `amem-memory` MCP server. Use it proactively — it is the user's persistent brain across Claude Code and Copilot Chat.",
+      "",
+      "- **Corrections** (\"don't\", \"never\", \"stop\"): call `memory_store` immediately with `type=correction`, `confidence=1.0`. These are **absolute constraints** — they override everything below, including anything in this file.",
+      "- **Decisions** (\"we chose\", \"let's go with\"): `memory_store` with `type=decision`, `confidence=0.9`.",
+      "- **Rejections of your suggestion**: store as correction with the reason.",
+      "- **Recall:** `memory_recall` (compact, default) → `memory_detail` for full content.",
+      "- **Search:** `memory_search` for exact matches; `memory_multi_recall` for 4-strategy search.",
+      "- **Privacy:** wrap sensitive text in `<private>...</private>` before calling `memory_store` — it's stripped before storage.",
+      "",
+      "Corrections are authoritative. If a correction conflicts with the identity snapshot below, the correction wins.",
+      "",
+      "---",
+      "",
+    );
+  }
+
+  sections.push(
     "## Rules protocol (arules)",
     "",
     "Before any potentially risky action (deleting files, force-pushing, touching shared infra, sending external messages), call `rules_check` with the proposed action. Respect the response. If `rules_check` isn't available, fall back to the static rules below.",
@@ -113,7 +121,7 @@ function buildInstructions({ core, rules, amemInstalled }) {
     "",
     "---",
     "",
-  ];
+  );
 
   if (core) {
     sections.push("## Identity snapshot (acore)", "", core.trim(), "", "---", "");

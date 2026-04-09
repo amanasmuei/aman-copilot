@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.0 — 2026-04-09
+
+Test hardening. First CI-ready release.
+
+### Added
+- **Test suite** (`test/test.sh`) — 38 assertions across 12 test groups
+  covering `init`, `install-mcp`, and `uninstall-mcp`. Uses the same
+  `bash + jq` pattern as aman-plugin's test harness for consistency.
+- **`AMAN_COPILOT_VSCODE_USER_DIR` env var** on both installers to redirect
+  writes to a sandbox directory during tests — no risk of clobbering the
+  real VS Code config when `npm test` runs.
+- `npm test` script in `package.json`.
+
+### Fixed
+- **Unconditional amem protocol leak** (caught on first test run) — the
+  Memory protocol section was being written even when `~/.amem/` did not
+  exist. Now gated, matching aman-plugin's behavior of only surfacing amem
+  guidance when amem is actually installed.
+
+### Test coverage
+- `init`: no-ecosystem exit, dev/copilot scope, prompt file generation,
+  YAML frontmatter well-formedness, session opening protocol presence,
+  scope cascade (`dev/copilot` → `dev/plugin` → legacy), amem gating.
+- `install-mcp`: fresh-config creation, preservation of other servers and
+  inputs array, idempotency, malformed JSON refusal.
+- `uninstall-mcp`: selective removal, preservation, graceful handling of
+  missing config.
+
 ## 0.2.0 — 2026-04-09
 
 Parity pass with aman-plugin. Closes most of the behavioral gap without

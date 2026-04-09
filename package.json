@@ -1,6 +1,6 @@
 {
   "name": "@aman_asmuei/aman-copilot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bring the aman ecosystem (identity, rules, memory, live MCP tools) into GitHub Copilot Chat in VS Code.",
   "type": "module",
   "bin": {
@@ -12,6 +12,9 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "scripts": {
+    "test": "bash test/test.sh"
+  },
   "engines": {
     "node": ">=18"
   },

@@ -31,6 +31,10 @@ const ENTRIES = {
 };
 
 function vscodeUserDir() {
+  // Test override: point at a sandbox dir instead of the real VS Code config.
+  if (process.env.AMAN_COPILOT_VSCODE_USER_DIR) {
+    return process.env.AMAN_COPILOT_VSCODE_USER_DIR;
+  }
   const platform = process.platform;
   if (platform === "darwin") {
     return path.join(

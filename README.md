@@ -18,6 +18,7 @@ Bring your identity, guardrails, memory, and live MCP tools into VS Code — eve
 [![VS Code](https://img.shields.io/badge/VS_Code-1.102+-007ACC.svg?style=flat-square)](https://code.visualstudio.com)
 [![Copilot](https://img.shields.io/badge/Copilot_Chat-Agent_Mode-24292f.svg?style=flat-square)](https://docs.github.com/copilot)
 [![Scope](https://img.shields.io/badge/scope-dev:copilot-informational.svg?style=flat-square)](#scope)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg?style=flat-square)](./test/test.sh)
 
 [Quickstart](#quickstart) · [How it Works](#how-it-works) · [Commands](#commands) · [vs aman-plugin](#vs-aman-plugin) · [Troubleshooting](#troubleshooting) · [Ecosystem](#the-ecosystem)
 
@@ -270,8 +271,9 @@ The shared ecosystem (`~/.acore`, `~/.arules`, `~/.amem`) is left alone — othe
 ## Roadmap
 
 - **v0.1** — init, install-mcp, uninstall-mcp. Cross-platform. Scope-aware.
-- **v0.2 (current)** — **Parity pass.** Time-aware greeting, forced-freshness protocol, native slash commands (`/identity`, `/rules`, `/eval`, `/remember`) via prompt files, proactive memory protocol.
-- **v0.3** — Test suite mirroring aman-plugin's harness. npm publish. VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
+- **v0.2** — **Parity pass.** Time-aware greeting, forced-freshness protocol, native slash commands (`/identity`, `/rules`, `/eval`, `/remember`) via prompt files, proactive memory protocol.
+- **v0.3 (current)** — **Test hardening.** 38 assertions across `init`, `install-mcp`, and `uninstall-mcp`. Sandboxed via `AMAN_COPILOT_VSCODE_USER_DIR`. Caught and fixed an unconditional amem-leak bug. CI-ready.
+- **v0.4** — npm publish. VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 
 See [CHANGELOG.md](CHANGELOG.md) for what's released.
@@ -313,7 +315,8 @@ Contributions welcome.
 
 1. Open an issue before sending a PR for anything non-trivial.
 2. Keep changes scope-aware — never break the `dev/copilot` → `dev/plugin` → legacy fallback chain.
-3. Update [`CHANGELOG.md`](CHANGELOG.md) under the next unreleased version.
+3. **Run the tests:** `bash test/test.sh` — all 38 must pass.
+4. Update [`CHANGELOG.md`](CHANGELOG.md) under the next unreleased version.
 
 ## License
 

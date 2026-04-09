@@ -11,6 +11,9 @@ import * as os from "node:os";
 const NAMES = ["aman", "amem-memory"];
 
 function vscodeUserDir() {
+  if (process.env.AMAN_COPILOT_VSCODE_USER_DIR) {
+    return process.env.AMAN_COPILOT_VSCODE_USER_DIR;
+  }
   const platform = process.platform;
   if (platform === "darwin") {
     return path.join(os.homedir(), "Library", "Application Support", "Code", "User");
