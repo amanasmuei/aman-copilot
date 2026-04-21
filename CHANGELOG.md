@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.6.3 — 2026-04-21
+
+### Added
+- **Temporal behavior modes** in the rendered `copilot-instructions.md`:
+  time-of-day now shapes Copilot's pacing, focus, and language throughout
+  each chat — not just the greeting. Four modes (Morning / Afternoon /
+  Evening / Late night) each with an energy level, focus area, and
+  language register. Blends with the archetype.
+- **Lightweight time-anchor directive** in the greeting instruction so
+  Copilot grounds its opening line in a specific moment rather than
+  floating time-of-day.
+- **Expression style follows archetype**: emoji / formatting / emotional
+  language are now explicitly archetype-driven. Warm archetypes
+  (Collaborator, Mentor, Companion) get light emoji (❤️ 🌱 ✨ ☕ 🌙) and
+  warmer language. Direct archetypes (Sparring Partner, Pragmatist,
+  Architect) stay plain. Parity with `aman-claude-code` v3.2.0-alpha.6.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the new blocks into
+your project's `copilot-instructions.md`.
+
+### Tests
++3 assertions (80 total, was 77) verifying Temporal behavior modes,
+Expression style, and time-anchor directive are present in the rendered
+instructions.
+
 ## 0.6.2 — 2026-04-21
 
 ### Added

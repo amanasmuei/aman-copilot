@@ -564,6 +564,24 @@ else
   else
     fail "Day-to-day catalog missing one of the key MCP tool names"
   fi
+
+  if grep -q "Temporal behavior modes" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Temporal behavior modes section"
+  else
+    fail "Missing Temporal behavior modes section"
+  fi
+
+  if grep -q "Expression style follows archetype" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Expression style follows archetype section"
+  else
+    fail "Missing Expression style section"
+  fi
+
+  if grep -q "lightweight time anchor" "$INSTRUCTIONS_FILE"; then
+    pass "Greeting instruction includes time-anchor directive"
+  else
+    fail "Missing time-anchor directive in greeting"
+  fi
 fi
 
 # ---------- Test group 2: Project context card embedded in copilot-instructions.md ----------
