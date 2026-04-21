@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.1 — 2026-04-21
+
+### Added
+- **In-session archetype switch** in Copilot Chat: saying `load archetype`
+  (or variants like "switch to mentor") no longer shells out to the
+  interactive `npx @aman_asmuei/acore customize` CLI (which doesn't work from
+  inside Copilot Chat anyway). Copilot handles the change itself — asks
+  which archetype, uses its file-edit tool or the `identity_update_section`
+  MCP tool to replace Personality / Communication / Values lines in
+  `core.md`, and shifts its own tone mid-conversation. Change persists for
+  future Claude Code sessions immediately; Copilot workspace picks it up on
+  next `aman-copilot init` re-render.
+
+Parity with `aman-claude-code` v3.2.0-alpha.4 hook instruction.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the new protocol into
+your project's `copilot-instructions.md`.
+
+### Tests
++2 assertions verifying the Archetype switch protocol and SHIFT YOUR OWN
+TONE instruction are present in rendered `copilot-instructions.md` (75
+total, was 73).
+
 ## 0.6.0 — 2026-04-21
 
 ### Added

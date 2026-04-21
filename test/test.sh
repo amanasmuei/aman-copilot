@@ -540,6 +540,18 @@ else
   else
     fail "Missing 'load archetype' catalog entry"
   fi
+
+  if grep -q "Archetype switch protocol" "$INSTRUCTIONS_FILE"; then
+    pass "Contains in-session Archetype switch protocol"
+  else
+    fail "Missing Archetype switch protocol override"
+  fi
+
+  if grep -q "SHIFT YOUR OWN TONE" "$INSTRUCTIONS_FILE"; then
+    pass "Archetype protocol instructs Copilot to shift tone mid-chat"
+  else
+    fail "Missing tone-shift instruction in archetype protocol"
+  fi
 fi
 
 # ---------- Test group 2: Project context card embedded in copilot-instructions.md ----------
