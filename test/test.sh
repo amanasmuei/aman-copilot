@@ -126,7 +126,10 @@ done
 # ---------- Test 4b: memory phrase catalog present ----------
 echo ""
 echo "Test group 4b: memory phrase catalog in instructions"
-for phrase in "Save triggers" "Recall triggers" "Session closers" "save a session narrative" "memory_tier"; do
+# Signatures updated for the v0.6.6 trimmed amem guidance — we check for the
+# stable *behavioural* markers (when to store, when to recall, privacy,
+# session close) rather than the old verbose section headings.
+for phrase in "When to store" "When to recall" "memory_store" "memory_recall" "memory_summarize" "Privacy:"; do
   if grep -q "$phrase" "$INSTR"; then
     pass "instructions contain: \"$phrase\""
   else

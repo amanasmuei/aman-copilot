@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.6 — 2026-04-21
+
+### Fixed
+- **Eliminated redundant tool calls on wake-word** — parity with
+  `aman-claude-code` v3.2.0-alpha.9. The alpha.8 "Step 0 — call
+  identity_summary" instruction caused Copilot to re-fetch identity
+  data already in the instructions file. Removed.
+
+### Changed
+- **Memory protocol block trimmed** ~57 → ~25 lines. Kept load-bearing
+  rules (when to store, when to recall, privacy, session close).
+  Dropped verbose phrase tables (redundant with the "Day-to-day verbs"
+  catalog elsewhere in the file), rules-of-engagement bullets, and
+  tier-promotion notes.
+
+### Tests
+- Updated Test group 4b assertions to match the new signatures
+  (`When to store`, `When to recall`, `memory_store`, `memory_recall`,
+  `memory_summarize`, `Privacy:`). 86 total, was 85.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the leaner
+instructions file.
+
 ## 0.6.5 — 2026-04-21
 
 ### Fixed
