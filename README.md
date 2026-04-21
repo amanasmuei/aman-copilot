@@ -130,7 +130,7 @@ Sarah: Morning, Aman — you're in myapp-frontend (Node/TypeScript).
        due today. What's next?
 ```
 
-The card is written automatically when you run `npx @aman_asmuei/aman@latest` in a repo with a detectable stack. It captures Stack, Domain, Focus, Session, Active topics, Recent decisions, and Project Patterns. Edit it as you work.
+Create the card on demand with **`npx @aman_asmuei/aman here`** (fast, single-purpose — writes the card for the current repo and exits), or let the full `npx @aman_asmuei/aman@latest` setup wizard detect your stack and write one automatically. The card captures Stack, Domain, Focus, Session, Active topics, Recent decisions, and Project Patterns. Edit it as you work.
 
 > **Re-run `init` when the card changes.** Unlike `aman-claude-code`, where the session-start hook reads `.acore/context.md` fresh every session, `copilot-instructions.md` is static until rewritten. If you edit `.acore/context.md` during a work session, re-run `npx @aman_asmuei/aman-copilot init` to refresh the embed.
 
