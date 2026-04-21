@@ -90,6 +90,8 @@ Sarah: Morning, Aman. Last session we landed scope inheritance
 - Does NOT fire when your first message is a task (`Sarah, fix the login bug`) — Copilot folds the greeting into the task opener instead.
 - Skipped automatically if the name field is still set to `Companion` (the default before identity setup).
 
+> **Reliability (v0.7.0+).** The trigger is now gated by explicit positive *and* negative examples in the generated `copilot-instructions.md`, not prose alone. Earlier versions drifted on edge cases. v0.7.0 also compresses the instructions file ~39% (16.8KB → 10.2KB on minimal identity), so Copilot has more headroom for your actual work.
+
 > **Staleness caveat.** `copilot-instructions.md` is written at `init` time and cached by Copilot until rewritten. If you rename your AI (via `acore customize` or by editing `~/.acore/core.md`), re-run `npx @aman_asmuei/aman-copilot init` so the wake-word matches the new name. This is not an issue on aman-claude-code — its `SessionStart` hook reads identity fresh every session.
 
 ### Tier-loader phrases
@@ -297,8 +299,10 @@ Run `npx @aman_asmuei/amem doctor` to diagnose. Common causes: amem daemon not r
 
 ## Roadmap
 
-- **v0.5 (current)** — Wake-word briefing, tier-loader phrases, `/session-narrative` slash command, phrase catalog embedded in generated instructions.
-- **v0.6** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings.
+- **v0.7 (current)** — Tiered session manifest: two-sided wake-word conditional (explicit positive *and* negative examples), explicit 6-step Boot Protocol as MCP tool-call sequence, ~39% reduction on the rendered instructions file. Mirror of aman-claude-code v3.2.0-alpha.10's same restructure.
+- **v0.6** — Project context card (path 1 of multi-project roadmap), `/session-narrative` slash command, phrase catalog embedded in generated instructions.
+- **v0.5** — Wake-word briefing and tier-loader phrases (first cut; iterated through v0.6.x before landing reliably in v0.7).
+- **Next** — VS Code extension wrapper with `@aman` chat participant for exact local time in greetings; per-project memory tagging in amem (path 2 of multi-project roadmap).
 - **Future** — JetBrains support (once their MCP story matures), `aman-cursor` sibling.
 
 See [CHANGELOG.md](CHANGELOG.md) for what's released.

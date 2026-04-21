@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1 — 2026-04-22
+
+### Changed
+- **README refresh.** Updated Roadmap section to reflect v0.7 current
+  (stale "v0.5 current" label). Added reliability callout under
+  Wake-word briefing section noting the two-sided conditional shipped
+  in v0.7.0 and the ~39% reduction on the rendered instructions file.
+  Docs-only patch release so npm serves the updated README alongside
+  the v0.7.0 behavior.
+
 ## 0.7.0 — 2026-04-22
 
 Mirror of `aman-claude-code` v3.2.0-alpha.10's Tiered Session Manifest
