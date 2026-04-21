@@ -542,6 +542,52 @@ else
   fi
 fi
 
+# ---------- Test group 2: Project context card embedded in copilot-instructions.md ----------
+echo ""
+echo "Test group 2: Project context card embedded in copilot-instructions.md"
+
+TMP_PC=$(make_sandbox_home "dev/copilot")
+cleanup_dirs+=("$TMP_PC")
+
+PROJECT_DIR="$TMP_PC/myproject"
+mkdir -p "$PROJECT_DIR/.acore"
+cat > "$PROJECT_DIR/.acore/context.md" <<'PCEOF'
+## Work
+- Stack: Node/TypeScript
+- Domain: frontend
+
+## Session
+- Last updated: 2026-04-21
+- Resume: checkout flow work
+PCEOF
+
+cd "$PROJECT_DIR"
+HOME="$TMP_PC" node "$INIT" >/dev/null 2>&1
+
+INSTRUCTIONS_FILE="$PROJECT_DIR/.github/copilot-instructions.md"
+
+if [ -f "$INSTRUCTIONS_FILE" ]; then
+  if grep -q "Project context (current working directory)" "$INSTRUCTIONS_FILE"; then
+    pass "Contains 'Project context' heading"
+  else
+    fail "Missing 'Project context' heading"
+  fi
+
+  if grep -q "Stack: Node/TypeScript" "$INSTRUCTIONS_FILE"; then
+    pass "Contains project card body"
+  else
+    fail "Missing project card body"
+  fi
+
+  if grep -q "checkout flow work" "$INSTRUCTIONS_FILE"; then
+    pass "Contains session text from card"
+  else
+    fail "Missing session text"
+  fi
+else
+  fail "copilot-instructions.md not rendered"
+fi
+
 # ---------- Summary ----------
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
