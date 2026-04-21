@@ -118,6 +118,42 @@ Full catalog:
 
 The same vocabulary works on aman-claude-code — the phrase catalog is cross-surface by design.
 
+> **`load archetype` is special.** As of v0.6.1 Copilot no longer shells out to the interactive CLI for this phrase — it edits your `core.md` via the `identity_update_section` MCP tool and shifts its own tone mid-chat. No re-init required. See [Day-to-day verbs](#day-to-day-verbs--just-talk) below.
+
+### Day-to-day verbs — just talk
+
+Once layers are installed, you don't need `load` anymore. In Copilot Chat **Agent mode**, say what you want in plain language — Copilot maps your phrase to the right MCP tool on the `aman` server and handles it in-session:
+
+| You say | What happens |
+|:---|:---|
+| *"add rule: never force-push to main"* | `rules_add` (Copilot classifies the category) |
+| *"can I delete this file?"* / *"is X allowed?"* | `rules_check` |
+| *"list my rules"* / *"list my skills"* / *"list tools"* | `rules_list` / `skill_list` / `tools_list` |
+| *"remove rule about X"* | `rules_remove` |
+| *"log this session as productive"* / *"record today"* | `eval_log` |
+| *"how are we doing?"* / *"show relationship report"* | `eval_report` |
+| *"we hit X today"* / *"milestone: Y"* | `eval_milestone` |
+| *"install testing skill"* / *"add security skill"* | `skill_install` |
+| *"search skills for X"* | `skill_search` |
+| *"add tool: github"* / *"install supabase tool"* | `tools_add` |
+| *"add workflow: code-review"* | `workflow_add` |
+| *"who am I?"* / *"show my profile"* | `identity_read` |
+| *"update my role to senior architect"* | `identity_update_section` |
+| *"remember that I use pnpm"* / *"don't commit secrets"* | `memory_store` |
+| *"what do you remember about X?"* | `memory_recall` |
+
+**Mental model**
+
+```
+New layer I haven't installed yet?  →  load <layer>
+I want my AI to feel different?     →  load archetype (tone shifts mid-chat)
+Everything else                     →  just say what you want
+```
+
+No phrases to memorize. Talk to your AI like a colleague — *"save this"*, *"check my rules"*, *"log today"*, *"install the testing skill"*. Copilot maps your intent to the right tool.
+
+> Shipped in v0.6.2 — the rendered `copilot-instructions.md` embeds the full catalog so Copilot knows every mapping without you teaching it. Re-run `npx @aman_asmuei/aman-copilot init` in existing projects to pick up the catalog.
+
 ### Project context card
 
 Juggling multiple repos? `aman-copilot init` now bakes each project's context into its own `copilot-instructions.md`. When you run init in a repo, it resolves the project root (git toplevel or `process.cwd()`), reads `$PROJECT_ROOT/.acore/context.md` if present, and embeds it as a **Project context** section so Copilot Chat knows which project it's in — on every chat turn in that workspace.
