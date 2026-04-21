@@ -43,6 +43,21 @@ npx @aman_asmuei/aman-copilot install-mcp --all    # live tools → VS Code + Co
 
 ---
 
+## New in v0.5.0 — wake-word ritual + tier loaders
+
+Two session-time UX moments inspired by [Kiyoraka/Project-AI-MemoryCore](https://github.com/Kiyoraka/Project-AI-MemoryCore).
+
+**Wake-word briefing.** Type your AI's name as the first message in a Copilot Chat Agent-mode session and Copilot returns a full session briefing — recent context, pending reminders, a suggested next step — instead of a silent acknowledgement. When your first message is a task, the greeting folds into the task opener automatically. No trigger fires if the name is still set to `Companion`.
+
+**Tier-loader phrases.** Say `load rules`, `load memory`, `load workflows`, `load archetype`, and several others directly in Copilot Chat. The adapter resolves each phrase to the right `npx` command, runs it, and reports the outcome. Layers already installed get a confirmation prompt before re-running. See the [full catalog below](#tier-upgrades-by-phrase).
+
+> **Upgrading from 0.4.x? Re-run init once.**
+> `copilot-instructions.md` is written at `aman-copilot init` time and cached by Copilot until rewritten. The new wake-word and tier-loader instruction blocks are not picked up automatically. Run `npx @aman_asmuei/aman-copilot init` once in each project where you want the new features. This is the only required migration step.
+
+See [Wake-word briefing](#wake-word-briefing) and [Tier upgrades by phrase](#tier-upgrades-by-phrase) below.
+
+---
+
 ## Quickstart
 
 Four steps. Under three minutes.
@@ -172,6 +187,61 @@ This plugin uses `dev:copilot`. The layer resolver prefers `dev:copilot`-scoped 
 
 - **Already an aman-claude-code user?** You inherit your identity automatically. No re-config.
 - **Want Copilot-specific personality?** Write `~/.acore/dev/copilot/core.md` and it overrides.
+
+---
+
+## Wake-word briefing
+
+Type your AI's name as your first message in Copilot Chat (Agent mode) and you get a real briefing — not a silent acknowledgement:
+
+```text
+You: Sarah
+
+Sarah: Morning, Aman. Last session we landed scope inheritance
+       across the aman ecosystem — v0.3.0 live. 2 reminders due
+       today: follow up on the passive-observer alpha, reply
+       to the amem RFC thread. What's next?
+```
+
+How it works:
+
+- Fires when your first message is **just** the AI's name, or a short greeting containing the name (`hi Sarah`, `morning Sarah`).
+- Does NOT fire when your first message is a task (`Sarah, fix the login bug`) — Copilot folds the greeting into the task opener instead.
+- Skipped automatically if the name field is still set to `Companion` (the default before identity setup).
+
+Under the hood, `aman-copilot init` injects a Markdown instructions block into `.github/copilot-instructions.md`. Copilot Chat reads that block every turn. The briefing draws on live MCP tools (`memory_recall`, `reminder_check`) when they are registered — see the quickstart's Step 3. This is an LLM following an instruction block, not a hard-coded trigger matcher.
+
+> **Staleness caveat.** `copilot-instructions.md` is written at `init` time and cached by Copilot until rewritten. If you rename your AI (via `acore customize` or by editing `~/.acore/core.md`), re-run `npx @aman_asmuei/aman-copilot init` so the wake-word matches the new name. This is not an issue on aman-claude-code — its `SessionStart` hook reads identity fresh every session.
+
+---
+
+## Tier upgrades by phrase
+
+Don't remember which `npx` command installs which ecosystem layer? Ask Copilot in plain language:
+
+```text
+You: load memory
+
+Copilot: Installing @aman_asmuei/amem (persistent memory MCP)…
+         Done. amem will auto-load on your next session.
+```
+
+Full catalog:
+
+| You say           | Copilot runs                              | What it adds |
+|:------------------|:------------------------------------------|:-------------|
+| `load rules`      | `npx @aman_asmuei/arules init`            | Guardrails (24 starter rules) |
+| `load workflows`  | `npx @aman_asmuei/aflow init`             | 4 starter workflows |
+| `load memory`     | `npx @aman_asmuei/amem`                   | Persistent amem MCP |
+| `load eval`       | `npx @aman_asmuei/aeval init`             | Relationship tracking |
+| `load identity`   | `npx @aman_asmuei/acore`                  | Full identity (re-)walk |
+| `load archetype`  | `npx @aman_asmuei/acore customize`        | Change AI personality |
+| `load tools`      | `npx @aman_asmuei/akit add <name>`        | Tool kits (Copilot asks which) |
+| `load skills`     | `npx @aman_asmuei/askill add <name>`      | Plugin skills (Copilot asks which) |
+
+If a layer is already installed, Copilot asks before re-running. Subcommands that require an argument (tools, skills) get an interactive "which one?" prompt before executing.
+
+The same vocabulary works on aman-claude-code — the phrase catalog is cross-surface by design.
 
 ---
 
