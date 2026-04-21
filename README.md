@@ -118,6 +118,24 @@ Full catalog:
 
 The same vocabulary works on aman-claude-code — the phrase catalog is cross-surface by design.
 
+### Project context card
+
+Juggling multiple repos? `aman-copilot init` now bakes each project's context into its own `copilot-instructions.md`. When you run init in a repo, it resolves the project root (git toplevel or `process.cwd()`), reads `$PROJECT_ROOT/.acore/context.md` if present, and embeds it as a **Project context** section so Copilot Chat knows which project it's in — on every chat turn in that workspace.
+
+```text
+You: Sarah
+
+Sarah: Morning, Aman — you're in myapp-frontend (Node/TypeScript).
+       Last session here we wired up the checkout flow. 2 reminders
+       due today. What's next?
+```
+
+The card is written automatically when you run `npx @aman_asmuei/aman@latest` in a repo with a detectable stack. It captures Stack, Domain, Focus, Session, Active topics, Recent decisions, and Project Patterns. Edit it as you work.
+
+> **Re-run `init` when the card changes.** Unlike `aman-claude-code`, where the session-start hook reads `.acore/context.md` fresh every session, `copilot-instructions.md` is static until rewritten. If you edit `.acore/context.md` during a work session, re-run `npx @aman_asmuei/aman-copilot init` to refresh the embed.
+
+> **Part of a multi-project roadmap.** Path 1 (project context) shipped in v0.6.0. Path 2 (per-project memory tagging in amem) and Path 3 (first-class project registry) are still on the roadmap — this release is a foundation, not a full multi-project system.
+
 ### Identity that persists
 
 `aman-copilot init` reads your `~/.acore/dev/copilot/core.md` (falling back through `dev/plugin` → legacy) and bakes your identity and rules into `copilot-instructions.md`. Copilot loads that file on every turn without any session hook. **Re-run `init` any time your identity changes** — Copilot won't pick up edits to `~/.acore` automatically.
