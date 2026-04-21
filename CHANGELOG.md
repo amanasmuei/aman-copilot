@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.2 — 2026-04-21
+
+### Added
+- **Day-to-day operations verb catalog** embedded in
+  `copilot-instructions.md`. Maps natural-language phrases to MCP tools
+  on the `aman` server across all six layers:
+  - acore: `identity_read`, `identity_update_section`, `identity_summary`
+  - arules: `rules_add`, `rules_check`, `rules_list`, `rules_remove`
+  - aeval: `eval_log`, `eval_report`, `eval_milestone`
+  - aflow: `workflow_list`, `workflow_get`, `workflow_add`, `workflow_remove`
+  - askill: `skill_list`, `skill_search`, `skill_install`, `skill_uninstall`
+  - akit: `tools_list`, `tools_search`, `tools_add`, `tools_remove`
+
+  Parity with `aman-claude-code` v3.2.0-alpha.5. No shell-out to CLIs for
+  day-to-day operations — Copilot handles installs/listings/updates
+  in-session via MCP.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the new catalog into
+your project's `copilot-instructions.md`.
+
+### Tests
++2 assertions (77 total, was 75) verifying the catalog is present.
+
 ## 0.6.1 — 2026-04-21
 
 ### Added

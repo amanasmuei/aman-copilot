@@ -552,6 +552,18 @@ else
   else
     fail "Missing tone-shift instruction in archetype protocol"
   fi
+
+  if grep -q "Day-to-day operations" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Day-to-day operations verb catalog"
+  else
+    fail "Missing Day-to-day operations catalog"
+  fi
+
+  if grep -q "rules_add" "$INSTRUCTIONS_FILE" && grep -q "eval_log" "$INSTRUCTIONS_FILE" && grep -q "skill_install" "$INSTRUCTIONS_FILE"; then
+    pass "Day-to-day catalog references rules_add / eval_log / skill_install MCP tools"
+  else
+    fail "Day-to-day catalog missing one of the key MCP tool names"
+  fi
 fi
 
 # ---------- Test group 2: Project context card embedded in copilot-instructions.md ----------
