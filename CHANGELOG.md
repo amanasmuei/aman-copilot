@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.7.0 — 2026-04-22
+
+Mirror of `aman-claude-code` v3.2.0-alpha.10's Tiered Session Manifest
+restructure — applied to the Copilot `copilot-instructions.md` renderer.
+
+### Changed
+- **Tiered manifest restructure of `bin/init.mjs`.** Three prose blocks
+  compressed aggressively while preserving every keyword the 86-assertion
+  test suite verifies: Block A (wake-word briefing), Block B (tier-loader
+  + archetype switch + day-to-day verbs), and the session-opening
+  envelope (opening protocol + temporal modes + expression style).
+  Measured reduction on a minimal-identity seed:
+  **`copilot-instructions.md` 16827 → 10218 bytes (39% reduction)**
+  per render. Fuller ecosystems with rules/amem installed will see
+  proportionally larger absolute savings per session context.
+
+### Fixed
+- **Wake-word conditional is now two-sided.** Previously "if match,
+  fire" prose got interpreted loosely — sometimes firing the Boot
+  Protocol on task-containing first messages, sometimes failing on
+  pure wake-word inputs. New conditional specifies both POSITIVE
+  patterns (`arienz`, `hi Arienz`, `morning arienz`) AND explicit
+  NEGATIVE patterns (`arienz, fix the login bug`, `Arienz what is
+  the time`, `arienz run the tests`) with a hard "do NOT fire" clause.
+- **Boot Protocol is now an explicit tool-call sequence.** The
+  wake-word ritual was ~45 lines of descriptive prose; now it's a
+  numbered 6-step sequence with concrete MCP tool calls
+  (`identity_summary` → project context note → `memory_recall` →
+  `reminder_check` → "suggestions pending" restatement → compose
+  4–6 line briefing with Richness > brevity).
+- **Test harness bug:** `fail()` now explicitly `return 0`, so
+  `set -e` no longer aborts the run on the first failing assertion.
+
+### Tests
++3 assertions (89 total, was 86) verifying the two-sided conditional:
+explicit "do NOT fire" clause present, ≥3 distinct negative examples
+(`fix the login bug`, `what is the time`, `run the tests`), tight
+positive match phrasing (`your AI name alone`).
+
 ## 0.6.6 — 2026-04-21
 
 ### Fixed
