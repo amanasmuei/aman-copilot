@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 — 2026-04-21
+
+### Added
+- **Project context card**: `aman-copilot init` now resolves the
+  current project root (git toplevel or `process.cwd()`) and embeds
+  `$PROJECT_ROOT/.acore/context.md` as a "Project context" section in
+  the rendered `.github/copilot-instructions.md`. Copilot Chat picks
+  up project-local stack, domain, active topics, and recent decisions
+  on every chat turn in that workspace.
+- Uses `execFile` (argv-separated invocation, no shell spawned) for
+  the `git rev-parse` call. No injection surface.
+
+Re-run `npx @aman_asmuei/aman-copilot init` inside a project to pick
+up the new embed. Silent no-op when no card is present.
+
+See the design spec in the sibling repo at
+`aman-plugin/docs/superpowers/specs/2026-04-21-project-context-card-design.md`.
+
 ## 0.5.0 — 2026-04-21
 
 ### Added
