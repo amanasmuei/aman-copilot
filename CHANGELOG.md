@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.6.4 — 2026-04-21
+
+### Changed
+- **Wake-word briefing rewritten as a grounded memory-restoration ritual.**
+  Parity with `aman-claude-code` v3.2.0-alpha.7. New briefing structure
+  (4–8 lines, richness > brevity): memory-restoration acknowledgment,
+  greeting with time anchor + user's name, project context from the
+  embedded Project-context card, recent reasoning path from
+  `memory_recall`, pending items from `reminder_check`, forward-looking
+  prompt matched to the archetype.
+
+### Fixed
+- **Anti-confusion guardrail** up top — the Identity `name` is YOU
+  (the AI), the Relationship `name` is the USER. Never greet the user by
+  the AI's own name. Case-insensitive trigger so `arienz` / `Arienz` /
+  `ARIENZ` all fire the briefing.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the rewritten
+briefing into your project's `copilot-instructions.md`.
+
+### Tests
++3 assertions (82 total, was 80) verifying the memory-restoration ritual,
+the "Who is who" guardrail, and the "Richness > brevity" directive are
+present in the rendered instructions.
+
 ## 0.6.3 — 2026-04-21
 
 ### Added

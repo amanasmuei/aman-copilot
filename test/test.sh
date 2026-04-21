@@ -505,10 +505,22 @@ else
     fail "Missing 'Wake-word briefing' heading"
   fi
 
-  if grep -q "EXPLICIT briefing request" "$INSTRUCTIONS_FILE"; then
-    pass "Contains Block A body signature"
+  if grep -q "memory-restoration ritual" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Wake-word briefing (memory-restoration ritual) body"
   else
-    fail "Missing Block A body signature"
+    fail "Missing memory-restoration ritual phrase"
+  fi
+
+  if grep -q "Who is who" "$INSTRUCTIONS_FILE"; then
+    pass "Contains anti-confusion 'Who is who' guardrail"
+  else
+    fail "Missing anti-confusion guardrail"
+  fi
+
+  if grep -q "Richness > brevity" "$INSTRUCTIONS_FILE"; then
+    pass "Briefing prioritises richness over brevity"
+  else
+    fail "Missing richness-over-brevity directive"
   fi
 
   if grep -q "suggestions pending" "$INSTRUCTIONS_FILE"; then
