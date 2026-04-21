@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.5.0 — 2026-04-21
+
+### Added
+- `aman-copilot init` now renders two new sections into
+  `.github/copilot-instructions.md`:
+  - **Wake-word briefing**: when the user's first Copilot Chat message is just
+    the AI's name, Copilot responds with a session briefing (memory_recall,
+    reminder_check, suggestions line, then "what's next?") instead of diving
+    into the task silently. Bullet 4 is Copilot-adapted — it references a
+    "suggestions pending" line embedded earlier in the instructions file
+    (Copilot has no `<aman-suggestion-notice>` hook tag).
+  - **Tier upgrades — natural-language loaders**: catalog mapping
+    `load rules`, `load workflows`, `load memory`, `load archetype`,
+    `load tools`, `load skills`, `load eval`, `load identity` to the
+    corresponding `npx @aman_asmuei/*` installer.
+
+Parity with `aman-claude-code` v3.2.0-alpha.2. Re-run `aman-copilot init` after
+upgrading to pick up both blocks.
+
+See the design spec in the sibling repo at
+`aman-plugin/docs/superpowers/specs/2026-04-21-wake-word-and-tier-loaders-design.md`.
+
+### Known limitation
+- `copilot-instructions.md` is rendered once at `init` time. If the user
+  changes their AI's identity name later (e.g., via `acore customize`), the
+  old name remains the Copilot wake-word until `aman-copilot init` is re-run.
+  Not an issue on `aman-claude-code` — its session-start hook reads `core.md`
+  fresh every session.
+
 ## 0.4.1 — 2026-04-09
 
 **Memory interface, not memory infrastructure.** Realized that the "amem

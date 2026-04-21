@@ -482,6 +482,66 @@ else
   fail "uninstall --cli clobbered other servers"
 fi
 
+# ---------- Test group 20: Wake-word briefing + tier loaders in copilot-instructions.md ----------
+echo ""
+echo "Test group 20: Block A + Block B present in rendered copilot-instructions.md"
+
+TMP_WAKE=$(make_sandbox_home "dev/copilot")
+cleanup_dirs+=("$TMP_WAKE")
+cd "$TMP_WAKE"
+
+HOME="$TMP_WAKE" node "$INIT" >/dev/null 2>&1
+
+INSTRUCTIONS_FILE="$TMP_WAKE/.github/copilot-instructions.md"
+
+if [ ! -f "$INSTRUCTIONS_FILE" ]; then
+  fail "copilot-instructions.md was not rendered"
+else
+  pass "copilot-instructions.md rendered"
+
+  if grep -q "Wake-word briefing" "$INSTRUCTIONS_FILE"; then
+    pass "Contains 'Wake-word briefing' heading"
+  else
+    fail "Missing 'Wake-word briefing' heading"
+  fi
+
+  if grep -q "EXPLICIT briefing request" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Block A body signature"
+  else
+    fail "Missing Block A body signature"
+  fi
+
+  if grep -q "suggestions pending" "$INSTRUCTIONS_FILE"; then
+    pass "Contains Copilot-adapted bullet 4 ('suggestions pending')"
+  else
+    fail "Missing Copilot-adapted bullet 4"
+  fi
+
+  if grep -q "aman-suggestion-notice" "$INSTRUCTIONS_FILE"; then
+    fail "Copilot file contains Claude-Code-specific '<aman-suggestion-notice>' tag (should be adapted)"
+  else
+    pass "Copilot file correctly omits '<aman-suggestion-notice>' tag"
+  fi
+
+  if grep -q "Tier upgrades — natural-language loaders" "$INSTRUCTIONS_FILE"; then
+    pass "Contains 'Tier upgrades' heading"
+  else
+    fail "Missing 'Tier upgrades' heading"
+  fi
+
+  if grep -q "load rules" "$INSTRUCTIONS_FILE" && grep -q "npx @aman_asmuei/arules init" "$INSTRUCTIONS_FILE"; then
+    pass "Contains 'load rules' catalog entry"
+  else
+    fail "Missing 'load rules' catalog entry"
+  fi
+
+  if grep -q "load archetype" "$INSTRUCTIONS_FILE" && grep -q "acore customize" "$INSTRUCTIONS_FILE"; then
+    pass "Contains 'load archetype' catalog entry"
+  else
+    fail "Missing 'load archetype' catalog entry"
+  fi
+fi
+
 # ---------- Summary ----------
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
