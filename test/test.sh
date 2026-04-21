@@ -19,7 +19,7 @@ FAIL=0
 TOTAL=0
 
 pass() { PASS=$((PASS + 1)); TOTAL=$((TOTAL + 1)); echo "  ✓ $1"; }
-fail() { FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); echo "  ✗ $1"; [ -n "${2:-}" ] && echo "      $2"; }
+fail() { FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); echo "  ✗ $1"; [ -n "${2:-}" ] && echo "      $2"; return 0; }
 
 # ---------- Helpers ----------
 
@@ -542,6 +542,28 @@ else
     pass "Briefing includes Recent Sessions log maintenance instruction"
   else
     fail "Missing Recent Sessions maintenance block"
+  fi
+
+  # Two-sided conditional (v0.7.0 mirror of aman-plugin alpha.10): wake-word
+  # block must include explicit NEGATIVE-fire cases so Copilot gates correctly
+  # on wake-word + task vs pure wake-word. Prevents loose-trigger regression.
+  if grep -q "do NOT fire\|MUST NOT fire" "$INSTRUCTIONS_FILE"; then
+    pass "Wake-word block includes explicit negative-fire instruction"
+  else
+    fail "Missing explicit 'do NOT fire' clause"
+  fi
+
+  NEG_COUNT=$(grep -cE "fix the login bug|what is the time|run the tests" "$INSTRUCTIONS_FILE" || echo 0)
+  if [ "$NEG_COUNT" -ge 3 ]; then
+    pass "Wake-word block lists multiple negative examples ($NEG_COUNT ≥ 3)"
+  else
+    fail "Need ≥3 negative examples in wake-word conditional, found $NEG_COUNT"
+  fi
+
+  if grep -q "your AI name alone\|AI name alone" "$INSTRUCTIONS_FILE"; then
+    pass "Wake-word positive match specifies 'your AI name alone'"
+  else
+    fail "Positive match too loose — need 'your AI name alone' phrasing"
   fi
 
   if grep -q "suggestions pending" "$INSTRUCTIONS_FILE"; then
