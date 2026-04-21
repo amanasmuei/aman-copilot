@@ -523,6 +523,24 @@ else
     fail "Missing richness-over-brevity directive"
   fi
 
+  if grep -q "PRECEDENCE" "$INSTRUCTIONS_FILE"; then
+    pass "Wake-word block has explicit PRECEDENCE over Session opening protocol"
+  else
+    fail "Missing PRECEDENCE instruction"
+  fi
+
+  if grep -q "identity_summary" "$INSTRUCTIONS_FILE"; then
+    pass "Step 0 instructs Copilot to call identity_summary for canonical names"
+  else
+    fail "Missing identity_summary Step 0"
+  fi
+
+  if grep -q "Recent Sessions maintenance" "$INSTRUCTIONS_FILE"; then
+    pass "Briefing includes Recent Sessions log maintenance instruction"
+  else
+    fail "Missing Recent Sessions maintenance block"
+  fi
+
   if grep -q "suggestions pending" "$INSTRUCTIONS_FILE"; then
     pass "Contains Copilot-adapted bullet 4 ('suggestions pending')"
   else

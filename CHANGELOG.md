@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.6.5 — 2026-04-21
+
+### Fixed
+- **Wake-word briefing now explicitly PRE-EMPTS the Session opening
+  protocol.** Parity with `aman-claude-code` v3.2.0-alpha.8. Closes the
+  same trigger-miss bug where Copilot would deliver the generic greeting
+  instead of the richer briefing.
+- **Step 0: call `identity_summary` or `identity_read`** MCP tool for
+  canonical AI/user names before trigger matching. Robust to any
+  core.md markdown variation.
+
+### Added
+- **Recent Sessions maintenance** instruction. Copilot appends a
+  one-bullet session log to `core.md`'s `## Recent Sessions` section
+  at session end (via `identity_update_section` MCP tool). Future
+  briefings reference the log directly.
+
+Re-run `npx @aman_asmuei/aman-copilot init` to embed the updated
+briefing prose into your project's `copilot-instructions.md`.
+
+### Tests
++3 assertions (85 total, was 82).
+
 ## 0.6.4 — 2026-04-21
 
 ### Changed
