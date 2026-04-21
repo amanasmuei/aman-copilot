@@ -269,6 +269,26 @@ See [CHANGELOG.md](CHANGELOG.md) for what's released.
 
 ---
 
+## Uninstall
+
+Removes the MCP server entries (VS Code + Copilot CLI) and the generated project files. **Your identity, rules, and memory at `~/.acore`, `~/.arules`, `~/.amem` are untouched** — they survive so the Claude Code side (or a future reinstall) keeps working without losing anything.
+
+```bash
+# 1. Remove the aman + amem MCP entries from VS Code and Copilot CLI config
+npx @aman_asmuei/aman-copilot uninstall-mcp --all
+
+# 2. In each project you ran `init` in, remove the generated files
+cd /path/to/project
+rm -f .github/copilot-instructions.md
+rm -f .github/prompts/{identity,rules,eval,remember,session-narrative}.prompt.md
+
+# 3. Reload VS Code so Copilot Chat picks up the empty state
+```
+
+To also wipe ecosystem data and per-project context cards (full uninstall across every surface), see the [canonical guide in the aman umbrella README](https://github.com/amanasmuei/aman#uninstall--reset).
+
+---
+
 ## License
 
 [MIT](LICENSE)
