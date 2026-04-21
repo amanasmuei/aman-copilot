@@ -45,7 +45,7 @@ npx @aman_asmuei/aman-copilot install-mcp --all    # live tools → VS Code + Co
 
 ## New in v0.5.0 — wake-word ritual + tier loaders
 
-Two session-time UX moments inspired by [Kiyoraka/Project-AI-MemoryCore](https://github.com/Kiyoraka/Project-AI-MemoryCore).
+Two new session-time UX moments land in this release.
 
 **Wake-word briefing.** Type your AI's name as the first message in a Copilot Chat Agent-mode session and Copilot returns a full session briefing — recent context, pending reminders, a suggested next step — instead of a silent acknowledgement. When your first message is a task, the greeting folds into the task opener automatically. No trigger fires if the name is still set to `Companion`.
 
